@@ -27,15 +27,15 @@ Phased roadmap for the Sabong Matching System. Each phase has a clear goal, scop
 |---|------|--------|
 | 1.1 | Move `db.js` to env vars (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`) | `[x]` |
 | 1.2 | Add `.env.example` with all documented variables | `[x]` |
-| 1.3 | Update README setup to reference `.env.example` | `[ ]` |
-| 1.4 | Fail fast in production if `SESSION_SECRET` or `LOGIN_PIN` are missing | `[ ]` |
-| 1.5 | Separate override passcodes from login PIN (require distinct env vars in prod) | `[ ]` |
-| 1.6 | Align project naming in README / `package.json` (Sabong Matching System) | `[ ]` |
+| 1.3 | Update README setup to reference `.env.example` | `[x]` |
+| 1.4 | Fail fast in production if `SESSION_SECRET` or `LOGIN_PIN` are missing | `[x]` |
+| 1.5 | Separate override passcodes from login PIN (require distinct env vars in prod) | `[x]` |
+| 1.6 | Align project naming in README / `package.json` (Sabong Matching System) | `[x]` |
 
 **Exit criteria**
-- [ ] App starts using only `.env` (no hardcoded DB credentials)
-- [ ] New developer can clone, copy `.env.example`, and run
-- [ ] Production misconfiguration fails loudly at startup
+- [x] App starts using only `.env` (no hardcoded DB credentials)
+- [x] New developer can clone, copy `.env.example`, and run
+- [x] Production misconfiguration fails loudly at startup
 
 **Estimated effort:** 1–2 sessions
 
@@ -194,8 +194,8 @@ Phased roadmap for the Sabong Matching System. Each phase has a clear goal, scop
 
 ## Current phase
 
-> **Phase 1 — Foundation & Configuration**  
-> Next task: **1.1** Move database config to environment variables
+> **Phase 2 — Matching Correctness & Tests**  
+> Next task: **2.1** Add test runner + npm script
 
 ---
 
@@ -213,5 +213,6 @@ Record choices made during implementation so later phases stay consistent.
 
 | Date | Phase | Notes |
 |------|-------|-------|
+| 2026-07-29 | Phase 1 | Central config module, production validation, Sabong branding |
 | 2026-07-29 | — | Docker Compose stack added; db.js uses env vars |
 | 2026-07-29 | — | Initial work plan created |

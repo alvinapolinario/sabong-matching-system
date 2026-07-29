@@ -1,6 +1,5 @@
 const router = require('express').Router();
-
-const STATIC_PIN = process.env.LOGIN_PIN || '112233';
+const config = require('../config');
 
 router.get('/login', (req, res) => {
   if (req.session?.authenticated) return res.redirect(req.query.return_to || '/');
@@ -16,7 +15,7 @@ router.post('/login', (req, res) => {
   const pin = String(req.body.pin || '').trim();
   const returnTo = req.body.return_to || '/';
 
-  if (!/^\d{6}$/.test(pin) || pin !== STATIC_PIN) {
+  if (!/^\d{6}$/.test(pin) || pin !== config.loginPin) {
     return res.redirect(`/login?return_to=${encodeURIComponent(returnTo)}&error=${encodeURIComponent('Invalid PIN code.')}`);
   }
 
@@ -26,7 +25,7 @@ router.post('/login', (req, res) => {
 
 router.post('/logout', (req, res) => {
   req.session.destroy(() => {
-    res.clearCookie('cockpit.sid');
+    res.clearCookie(config.sessionCookieName);
     res.redirect('/login');
   });
 });

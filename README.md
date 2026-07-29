@@ -1,6 +1,6 @@
-# Cockpit Event Matching System
+# Sabong Matching System
 
-Web app for managing cockpit derby events: encoding gamecock entries, drag-and-drop matching, fight scheduling, live/TV displays, and real-time board updates.
+Web app for managing sabong derby events: encoding gamecock entries, drag-and-drop matching, fight scheduling, live/TV displays, and real-time board updates.
 
 ## Features
 
@@ -33,7 +33,7 @@ Web app for managing cockpit derby events: encoding gamecock entries, drag-and-d
 cp .env.example .env
 ```
 
-Edit `.env` if needed. Defaults work for local Docker.
+The example file includes distinct override passcodes required for `NODE_ENV=production` (used by Docker). Change all secrets before deploying.
 
 ### 2. Start the stack
 
@@ -47,7 +47,7 @@ This starts:
 
 ### 3. Log in
 
-Open [http://localhost:3000](http://localhost:3000) and use the 6-digit PIN from `.env` (default `112233`).
+Open [http://localhost:3000](http://localhost:3000) and use the 6-digit `LOGIN_PIN` from `.env` (default `112233`).
 
 ### Useful commands
 
@@ -55,7 +55,7 @@ Open [http://localhost:3000](http://localhost:3000) and use the 6-digit PIN from
 docker compose logs -f app    # App logs
 docker compose down         # Stop containers
 docker compose down -v      # Stop and remove database volume (fresh DB)
-docker compose up --build     # Rebuild and run in foreground
+docker compose up --build   # Rebuild and run in foreground
 ```
 
 Backups created in the app are stored in `./backups` on the host.
@@ -85,54 +85,58 @@ For an existing database, apply numbered migrations in `sql/` in order (`001` th
 
 ### 3. Configure environment
 
-Create a `.env` file in the project root (see `.env.example`):
+Copy the template and edit as needed:
 
-```env
-PORT=3000
-SESSION_SECRET=change-me-to-a-random-string
-LOGIN_PIN=112233
-MANUAL_MIXED_TYPE_PASSCODE=112233
-MANUAL_WEIGHT_OVERRIDE_PASSCODE=112233
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=
-DB_NAME=matching_db
+```bash
+cp .env.example .env
 ```
+
+For local development, either keep `NODE_ENV=development` (allows default fallbacks) or set production values explicitly. See [Environment variables](#environment-variables) below.
 
 ### 4. Run the app
 
 ```bash
-npm start
-```
-
-Development with auto-reload:
-
-```bash
-npm run dev
+npm start          # production mode (validates required env vars)
+npm run dev        # development mode with nodemon
 ```
 
 Open [http://localhost:3000](http://localhost:3000) and log in with the 6-digit PIN.
 
-## Environment Variables
+## Environment variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
+Copy from [`.env.example`](.env.example). All configuration is loaded via [`config/index.js`](config/index.js).
+
+| Variable | Default (dev) | Description |
+|----------|---------------|-------------|
+| `NODE_ENV` | — | Set to `production` to enforce required secrets |
 | `PORT` | `3000` | HTTP server port |
-| `SESSION_SECRET` | (built-in fallback) | Express session signing secret |
+| `SESSION_SECRET` | dev fallback | Express session signing secret |
 | `LOGIN_PIN` | `112233` | 6-digit login PIN |
 | `MANUAL_MIXED_TYPE_PASSCODE` | `LOGIN_PIN` | Passcode for manual cross-type matches |
 | `MANUAL_WEIGHT_OVERRIDE_PASSCODE` | `LOGIN_PIN` | Passcode for manual matches exceeding weight tolerance |
+| `COOKIE_SECURE` | `false` | Set `true` when serving over HTTPS |
 | `DB_HOST` | `localhost` | MySQL host (`db` inside Docker Compose) |
 | `DB_PORT` | `3306` | MySQL port |
 | `DB_USER` | `root` | MySQL user |
 | `DB_PASSWORD` | `''` | MySQL password |
 | `DB_NAME` | `matching_db` | MySQL database name |
 
+### Production requirements
+
+When `NODE_ENV=production`, the app **refuses to start** unless:
+
+- `SESSION_SECRET` is set
+- `LOGIN_PIN` is a 6-digit code
+- `MANUAL_MIXED_TYPE_PASSCODE` is set and **differs** from `LOGIN_PIN`
+- `MANUAL_WEIGHT_OVERRIDE_PASSCODE` is set and **differs** from `LOGIN_PIN`
+
+Set `COOKIE_SECURE=true` when running behind HTTPS.
+
 ## Project Structure
 
 ```
 app.js              Entry point, middleware, routes
+config/             Environment validation and app config
 db.js               MySQL connection pool
 docker/             Container entrypoint scripts
 Dockerfile          App container image

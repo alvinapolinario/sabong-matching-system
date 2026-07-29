@@ -1,4 +1,4 @@
-require('dotenv').config();
+const config = require('./config');
 
 const express = require('express');
 const path = require('path');
@@ -16,19 +16,20 @@ const io = new Server(server);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-app.locals.appName = 'Cockpit Event Matching';
+app.locals.appName = config.appName;
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(methodOverride('_method'));
 app.use(session({
-  name: 'cockpit.sid',
-  secret: process.env.SESSION_SECRET || 'cockpit-static-pin-session-secret',
+  name: config.sessionCookieName,
+  secret: config.sessionSecret,
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
     sameSite: 'lax',
+    secure: config.cookieSecure,
     maxAge: 1000 * 60 * 60 * 12
   }
 }));
@@ -76,7 +77,6 @@ app.use((err, req, res, next) => {
 
 socketHandler(io);
 
-const port = process.env.PORT || 3000;
-server.listen(port, () => {
-  console.log(`Cockpit matching system running on http://0.0.0.0:${port}`);
+server.listen(config.port, () => {
+  console.log(`${config.appName} running on http://0.0.0.0:${config.port}`);
 });

@@ -1,11 +1,9 @@
 const db = require('../db');
+const config = require('../config');
 const Event = require('../models/eventModel');
 const Chicken = require('../models/chickenModel');
 const Match = require('../models/matchModel');
 const Owner = require('../models/ownerModel');
-
-const MANUAL_MIXED_TYPE_PASSCODE = process.env.MANUAL_MIXED_TYPE_PASSCODE || process.env.LOGIN_PIN || '112233';
-const MANUAL_WEIGHT_OVERRIDE_PASSCODE = process.env.MANUAL_WEIGHT_OVERRIDE_PASSCODE || process.env.LOGIN_PIN || '112233';
 
 function typeAllowed(event, type) {
   if (type === 'cock') return Boolean(event.allow_cock);
@@ -402,7 +400,7 @@ async function confirm(req, res, next) {
     const difference = Math.abs(Number(meron.weight) - Number(wala.weight));
     if (difference > Number(event.give_take_grams)) {
       const overridePasscode = String(req.body.override_passcode || '').trim();
-      if (overridePasscode !== MANUAL_WEIGHT_OVERRIDE_PASSCODE) {
+      if (overridePasscode !== config.manualWeightOverridePasscode) {
         await connection.rollback();
         return res.status(403).json({
           ok: false,
@@ -417,7 +415,7 @@ async function confirm(req, res, next) {
 
     if (meron.type !== wala.type) {
       const overridePasscode = String(req.body.override_passcode || '').trim();
-      if (overridePasscode !== MANUAL_MIXED_TYPE_PASSCODE) {
+      if (overridePasscode !== config.manualMixedTypePasscode) {
         await connection.rollback();
         return res.status(403).json({
           ok: false,

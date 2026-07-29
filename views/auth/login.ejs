@@ -11,7 +11,7 @@
   <main class="login-shell">
     <form action="/login" method="post" class="login-card">
       <input type="hidden" name="return_to" value="<%= returnTo %>">
-      <h1>Cockpit Matching</h1>
+      <h1><%= appName %></h1>
       <p>Enter the 6-digit PIN to continue.</p>
       <% if (error) { %>
         <div class="alert alert-danger py-2"><%= error %></div>
