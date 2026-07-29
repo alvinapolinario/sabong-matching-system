@@ -203,6 +203,19 @@ function buildAutoMatchMessage(summary, entryGap = AUTO_MATCH_ENTRY_GAP) {
   return message;
 }
 
+function formatAutoMatchPreview(pairs) {
+  return pairs.map((pair, index) => ({
+    fight_index: index + 1,
+    meron_owner: pair.meron.owner_name,
+    meron_entry: pair.meron.entry_name,
+    meron_weight: Number(pair.meron.weight),
+    wala_owner: pair.wala.owner_name,
+    wala_entry: pair.wala.entry_name,
+    wala_weight: Number(pair.wala.weight),
+    difference: pair.difference
+  }));
+}
+
 module.exports = {
   AUTO_MATCH_ENTRY_GAP,
   normalizePair,
@@ -220,5 +233,6 @@ module.exports = {
   comparePairPriority,
   findAutoPairs,
   summarizeAutoMatch,
-  buildAutoMatchMessage
+  buildAutoMatchMessage,
+  formatAutoMatchPreview
 };

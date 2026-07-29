@@ -183,6 +183,38 @@ body {
   opacity: .35;
 }
 
+.chicken-card--recommended {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.35);
+}
+
+.chicken-card--blocked {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.chicken-card--dimmed {
+  opacity: 0.55;
+}
+
+.auto-match-preview-list {
+  display: grid;
+  gap: .75rem;
+}
+
+.auto-match-preview-item {
+  background: #223049;
+  border: 1px solid #3c4d69;
+  border-radius: 8px;
+  padding: .85rem 1rem;
+}
+
+.auto-match-preview-item .fight-label {
+  color: #fbbf24;
+  font-weight: 700;
+  margin-bottom: .35rem;
+}
+
 .band-line {
   margin-top: .35rem;
   color: #c8d2e4;

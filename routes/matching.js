@@ -4,6 +4,7 @@ const controller = require('../controllers/matchingController');
 router.get('/', controller.board);
 router.get('/api/pool', controller.apiPool);
 router.get('/api/matches', controller.apiMatches);
+router.post('/auto/preview', controller.previewAutoMatch);
 router.post('/auto', controller.autoMatch);
 router.post('/confirm', controller.confirm);
 router.delete('/unfought', controller.destroyUnfought);

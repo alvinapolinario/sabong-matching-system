@@ -74,17 +74,17 @@ Phased roadmap for the Sabong Matching System. Each phase has a clear goal, scop
 
 | # | Task | Status |
 |---|------|--------|
-| 3.1 | Expose no-fight pairs to matching board (API or page data) | `[ ]` |
-| 3.2 | Client warning: same owner, no-fight, over-weight before confirm | `[ ]` |
-| 3.3 | Replace `window.prompt()` with in-page modal for override passcode | `[ ]` |
-| 3.4 | Dim / highlight recommended opponents when a side is selected | `[ ]` |
-| 3.5 | Auto-match preview: show proposed pairs + count before committing | `[ ]` |
-| 3.6 | Auto-match result summary (matched / skipped / reason) | `[ ]` |
+| 3.1 | Expose no-fight pairs to matching board (API or page data) | `[x]` |
+| 3.2 | Client warning: same owner, no-fight, over-weight before confirm | `[x]` |
+| 3.3 | Replace `window.prompt()` with in-page modal for override passcode | `[x]` |
+| 3.4 | Dim / highlight recommended opponents when a side is selected | `[x]` |
+| 3.5 | Auto-match preview: show proposed pairs + count before committing | `[x]` |
+| 3.6 | Auto-match result summary (matched / skipped / reason) | `[x]` |
 
 **Exit criteria**
-- [ ] Operators get immediate feedback for invalid pairings before server round-trip
-- [ ] Override passcode works via modal (usable on tablet/TV setup)
-- [ ] Auto-match shows what will happen before irreversible confirm
+- [x] Operators get immediate feedback for invalid pairings before server round-trip
+- [x] Override passcode works via modal (usable on tablet/TV setup)
+- [x] Auto-match shows what will happen before irreversible confirm
 
 **Estimated effort:** 2–3 sessions
 
@@ -194,8 +194,8 @@ Phased roadmap for the Sabong Matching System. Each phase has a clear goal, scop
 
 ## Current phase
 
-> **Phase 3 — Operator UX (Matching Board)**  
-> Next task: **3.1** Expose no-fight pairs to matching board
+> **Phase 4 — Security & Audit Trail**  
+> Next task: **4.1** Rate-limit `/login`
 
 ---
 
@@ -213,6 +213,7 @@ Record choices made during implementation so later phases stay consistent.
 
 | Date | Phase | Notes |
 |------|-------|-------|
+| 2026-07-29 | Phase 3 | Matching board UX: no-fight warnings, modals, auto-match preview |
 | 2026-07-29 | Phase 2 | Matching service extraction, unit tests, partial auto-match |
 | 2026-07-29 | Phase 1 | Central config module, production validation, Sabong branding |
 | 2026-07-29 | — | Docker Compose stack added; db.js uses env vars |

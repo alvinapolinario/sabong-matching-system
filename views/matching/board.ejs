@@ -28,6 +28,8 @@
 
   <div id="matchAlert" class="alert d-none"></div>
 
+  <script type="application/json" id="matchingBoardMeta"><%- JSON.stringify({ noFightKeys }) %></script>
+
   <div class="matching-grid" data-event-id="<%= selectedEvent %>" data-give-take="<%= event ? event.give_take_grams : 0 %>">
     <section class="board-panel">
       <div class="board-panel-header">
@@ -102,7 +104,67 @@
     </section>
   </div>
 </div>
+
+<div class="modal fade" id="overridePasscodeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Manual Override Required</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="overridePasscodeReason" class="small text-white-50 mb-3"></p>
+        <label for="overridePasscodeInput" class="form-label">Confirmation passcode</label>
+        <input id="overridePasscodeInput" type="password" class="form-control" inputmode="numeric" autocomplete="off">
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" id="overridePasscodeConfirm">Confirm Match</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="autoMatchPreviewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Auto Match Preview</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="autoMatchPreviewSummary" class="mb-3"></p>
+        <div id="autoMatchPreviewList" class="auto-match-preview-list"></div>
+        <p id="autoMatchPreviewSkip" class="small text-white-50 mt-3 mb-0"></p>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-warning" id="autoMatchPreviewConfirm">Confirm Auto Match</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="autoMatchResultModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Auto Match Result</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="autoMatchResultSummary" class="mb-3"></p>
+        <div id="autoMatchResultList" class="auto-match-preview-list"></div>
+        <p id="autoMatchResultSkip" class="small text-white-50 mt-3 mb-0"></p>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-<script src="/js/matching.js"></script>
 <%- include('../layouts/footer') %>
+<script src="/js/matching.js"></script>

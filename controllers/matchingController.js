@@ -12,8 +12,61 @@ const {
   recommendedOpponents,
   findAutoPairs,
   summarizeAutoMatch,
-  buildAutoMatchMessage
+  buildAutoMatchMessage,
+  formatAutoMatchPreview
 } = Matching;
+
+async function loadAutoMatchInputs(eventId, connection = db, lockRows = false) {
+  const lockClause = lockRows ? ' FOR UPDATE' : '';
+  const [eventRows] = await connection.execute(
+    `SELECT * FROM events WHERE event_id = ?${lockClause}`,
+    [eventId]
+  );
+  const event = eventRows[0];
+  if (!event) return null;
+
+  const [chickens] = await connection.execute(
+    `SELECT ed.*, e.entry_name, e.event_id, o.owner_id, o.owner_name
+     FROM entry_data ed
+     JOIN entries e ON e.entry_id = ed.entry_id
+     JOIN owners o ON o.owner_id = e.owner_id
+     WHERE e.event_id = ?
+       AND ed.status = 'available'
+     ORDER BY ed.type ASC, ed.weight ASC, ed.chicken_id ASC${lockClause}`,
+    [eventId]
+  );
+
+  const [existingFightEntries] = await connection.execute(
+    `SELECT
+       meron_entry.entry_id AS meron_entry_id,
+       wala_entry.entry_id AS wala_entry_id
+     FROM matches m
+     JOIN entry_data meron_gamecock ON meron_gamecock.chicken_id = m.meron_chicken_id
+     JOIN entries meron_entry ON meron_entry.entry_id = meron_gamecock.entry_id
+     JOIN entry_data wala_gamecock ON wala_gamecock.chicken_id = m.wala_chicken_id
+     JOIN entries wala_entry ON wala_entry.entry_id = wala_gamecock.entry_id
+     WHERE m.event_id = ?
+     ORDER BY m.fight_no ASC${lockClause}`,
+    [eventId]
+  );
+
+  const recentFightEntries = existingFightEntries
+    .slice(-AUTO_MATCH_ENTRY_GAP)
+    .map((fight) => [Number(fight.meron_entry_id), Number(fight.wala_entry_id)]);
+
+  const noFightSet = await Owner.noFightSet();
+  const pairs = findAutoPairs(chickens, event, recentFightEntries, AUTO_MATCH_ENTRY_GAP, noFightSet);
+  const summary = summarizeAutoMatch(chickens, pairs, event);
+
+  return {
+    event,
+    chickens,
+    pairs,
+    summary,
+    preview: formatAutoMatchPreview(pairs),
+    message: buildAutoMatchMessage(summary)
+  };
+}
 
 async function board(req, res, next) {
   try {
@@ -22,16 +75,16 @@ async function board(req, res, next) {
     const availableFilters = req.query.recommend_for
       ? { event_id: selectedEvent, status: 'available' }
       : { ...req.query, event_id: selectedEvent, status: 'available' };
-    const [event, rawAvailable, matches] = await Promise.all([
+    const [event, rawAvailable, matches, noFightSet] = await Promise.all([
       selectedEvent ? Event.findById(selectedEvent) : null,
       selectedEvent ? Chicken.all(availableFilters) : [],
-      selectedEvent ? Match.all(selectedEvent) : []
+      selectedEvent ? Match.all(selectedEvent) : [],
+      Owner.noFightSet()
     ]);
     let available = rawAvailable;
 
     if (event && req.query.recommend_for) {
       const baseChicken = await Chicken.findDetailed(req.query.recommend_for);
-      const noFightSet = await Owner.noFightSet();
       available = recommendedOpponents(rawAvailable, baseChicken, event, noFightSet);
     }
 
@@ -43,7 +96,33 @@ async function board(req, res, next) {
       available,
       matches,
       filters: req.query,
-      autoMatchEntryGap: AUTO_MATCH_ENTRY_GAP
+      autoMatchEntryGap: AUTO_MATCH_ENTRY_GAP,
+      noFightKeys: [...noFightSet]
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function previewAutoMatch(req, res, next) {
+  try {
+    const eventId = Number(req.body.event_id);
+    if (!eventId) {
+      return res.status(422).json({ ok: false, message: 'Select an event before auto matching.' });
+    }
+
+    const plan = await loadAutoMatchInputs(eventId);
+    if (!plan) {
+      return res.status(404).json({ ok: false, message: 'Event not found.' });
+    }
+
+    res.json({
+      ok: plan.pairs.length > 0,
+      message: plan.message,
+      preview: plan.preview,
+      matched_count: plan.summary.matched_count,
+      unmatched_count: plan.summary.unmatched_count,
+      eligible_count: plan.summary.eligible_count
     });
   } catch (error) {
     next(error);
@@ -60,59 +139,25 @@ async function autoMatch(req, res, next) {
 
     await connection.beginTransaction();
 
-    const [eventRows] = await connection.execute('SELECT * FROM events WHERE event_id = ? FOR UPDATE', [eventId]);
-    const event = eventRows[0];
-    if (!event) {
+    const plan = await loadAutoMatchInputs(eventId, connection, true);
+    if (!plan) {
       await connection.rollback();
       return res.status(404).json({ ok: false, message: 'Event not found.' });
     }
 
-    const [chickens] = await connection.execute(
-      `SELECT ed.*, e.entry_name, e.event_id, o.owner_id, o.owner_name
-       FROM entry_data ed
-       JOIN entries e ON e.entry_id = ed.entry_id
-       JOIN owners o ON o.owner_id = e.owner_id
-       WHERE e.event_id = ?
-         AND ed.status = 'available'
-       ORDER BY ed.type ASC, ed.weight ASC, ed.chicken_id ASC
-       FOR UPDATE`,
-      [eventId]
-    );
-
-    const [existingFightEntries] = await connection.execute(
-      `SELECT
-         meron_entry.entry_id AS meron_entry_id,
-         wala_entry.entry_id AS wala_entry_id
-       FROM matches m
-       JOIN entry_data meron_gamecock ON meron_gamecock.chicken_id = m.meron_chicken_id
-       JOIN entries meron_entry ON meron_entry.entry_id = meron_gamecock.entry_id
-       JOIN entry_data wala_gamecock ON wala_gamecock.chicken_id = m.wala_chicken_id
-       JOIN entries wala_entry ON wala_entry.entry_id = wala_gamecock.entry_id
-       WHERE m.event_id = ?
-       ORDER BY m.fight_no ASC
-       FOR UPDATE`,
-      [eventId]
-    );
-    const recentFightEntries = existingFightEntries
-      .slice(-AUTO_MATCH_ENTRY_GAP)
-      .map((fight) => [Number(fight.meron_entry_id), Number(fight.wala_entry_id)]);
-
-    const noFightSet = await Owner.noFightSet();
-    const pairs = findAutoPairs(chickens, event, recentFightEntries, AUTO_MATCH_ENTRY_GAP, noFightSet);
-    const summary = summarizeAutoMatch(chickens, pairs, event);
-
-    if (!pairs.length) {
+    if (!plan.pairs.length) {
       await connection.rollback();
       return res.status(422).json({
         ok: false,
-        message: buildAutoMatchMessage(summary),
+        message: plan.message,
         matched_count: 0,
-        unmatched_count: summary.unmatched_count
+        unmatched_count: plan.summary.unmatched_count,
+        preview: plan.preview
       });
     }
 
     const matchedIds = [];
-    for (const pair of pairs) {
+    for (const pair of plan.pairs) {
       const fightNo = await Match.nextFightNo(eventId, connection);
       await Match.create({
         event_id: eventId,
@@ -135,9 +180,10 @@ async function autoMatch(req, res, next) {
 
     res.json({
       ok: true,
-      message: buildAutoMatchMessage(summary),
-      matched_count: summary.matched_count,
-      unmatched_count: summary.unmatched_count
+      message: plan.message,
+      matched_count: plan.summary.matched_count,
+      unmatched_count: plan.summary.unmatched_count,
+      preview: plan.preview
     });
   } catch (error) {
     await connection.rollback();
@@ -150,8 +196,16 @@ async function autoMatch(req, res, next) {
 async function apiPool(req, res, next) {
   try {
     if (!req.query.recommend_for) {
-      const chickens = await Chicken.all({ ...req.query, status: 'available' });
-      return res.json({ ok: true, chickens, recommended: false });
+      const [chickens, noFightSet] = await Promise.all([
+        Chicken.all({ ...req.query, status: 'available' }),
+        Owner.noFightSet()
+      ]);
+      return res.json({
+        ok: true,
+        chickens,
+        recommended: false,
+        no_fight_keys: [...noFightSet]
+      });
     }
 
     const [event, baseChicken] = await Promise.all([
@@ -176,7 +230,8 @@ async function apiPool(req, res, next) {
       ok: true,
       chickens: recommendedOpponents(chickens, baseChicken, event, noFightSet),
       recommended: true,
-      base_chicken: baseChicken
+      base_chicken: baseChicken,
+      no_fight_keys: [...noFightSet]
     });
   } catch (error) {
     next(error);
@@ -343,4 +398,4 @@ async function destroyUnfought(req, res, next) {
   }
 }
 
-module.exports = { board, autoMatch, apiPool, apiMatches, confirm, destroy, destroyUnfought };
+module.exports = { board, previewAutoMatch, autoMatch, apiPool, apiMatches, confirm, destroy, destroyUnfought };
