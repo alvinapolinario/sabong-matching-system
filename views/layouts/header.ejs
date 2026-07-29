@@ -28,7 +28,7 @@
             ['/fights', 'Fights', 'bi-trophy'],
             ['/live', 'Live Board', 'bi-broadcast'],
             ['/audit/overrides', 'Audit', 'bi-shield-check'],
-            ['/reset', 'Reset', 'bi-exclamation-triangle']
+            ['/reset', 'Reset & Backup', 'bi-exclamation-triangle']
           ].forEach((item) => { %>
             <li class="nav-item">
               <a class="nav-link <%= path === item[0] || (item[0] !== '/' && path.startsWith(item[0])) ? 'active' : '' %>" href="<%= item[0] %>">

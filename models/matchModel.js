@@ -1,9 +1,11 @@
 const db = require('../db');
+const { decorateMatchRow, decorateMatchRows } = require('../services/matchDisplayService');
 
 const matchSelect = `
   SELECT
     m.*,
     ev.event_name,
+    ev.give_take_grams,
     mc.type AS meron_type,
     mc.wingband AS meron_wingband,
     mc.legband AS meron_legband,
@@ -38,7 +40,7 @@ async function all(eventId) {
      ORDER BY m.event_id DESC, m.fight_no ASC`,
     params
   );
-  return rows;
+  return decorateMatchRows(rows);
 }
 
 async function findById(matchId) {
@@ -47,7 +49,7 @@ async function findById(matchId) {
      WHERE m.match_id = ?`,
     [matchId]
   );
-  return rows[0];
+  return decorateMatchRow(rows[0]);
 }
 
 async function nextFightNo(eventId, connection = db) {

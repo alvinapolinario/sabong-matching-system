@@ -12,15 +12,16 @@
   <div id="liveMatches" class="live-match-grid">
     <% matches.forEach((match) => { %>
       <article class="live-card">
-        <div class="live-fight">Fight #<%= match.fight_no %></div>
+        <div class="live-fight">Fight #<%= match.fight_no %><% if (match.marker_suffix) { %><span class="match-marker"><%= match.marker_suffix %></span><% } %></div>
         <div class="live-sides">
-          <div><span>MERON</span><strong><%= match.meron_owner %></strong><em><%= match.meron_weight %>g</em></div>
-          <div><span>WALA</span><strong><%= match.wala_owner %></strong><em><%= match.wala_weight %>g</em></div>
+          <div><span>MERON</span><strong><%= match.meron_owner %></strong><em><%= match.meron_weight %>g<% if (match.is_mixed_type) { %> (<%= match.meron_type %>)<% } %></em></div>
+          <div><span>WALA</span><strong><%= match.wala_owner %></strong><em><%= match.wala_weight %>g<% if (match.is_mixed_type) { %> (<%= match.wala_type %>)<% } %></em></div>
         </div>
         <div class="live-meta">Difference <%= match.weight_difference %>g / <%= match.status %></div>
       </article>
     <% }) %>
   </div>
+  <%- include('../partials/match-override-legend') %>
 </div>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/live.js"></script>

@@ -1,5 +1,5 @@
-const db = require('../db');
 const config = require('../config');
+const db = require('../db');
 const Event = require('../models/eventModel');
 const Chicken = require('../models/chickenModel');
 const Match = require('../models/matchModel');
@@ -13,7 +13,6 @@ const {
 } = require('../socket/events');
 
 const {
-  AUTO_MATCH_ENTRY_GAP,
   validateChicken,
   recommendedOpponents,
   findAutoPairs,
@@ -21,6 +20,8 @@ const {
   buildAutoMatchMessage,
   formatAutoMatchPreview
 } = Matching;
+
+const autoMatchEntryGap = config.autoMatchEntryGap;
 
 async function loadAutoMatchInputs(eventId, connection = db, lockRows = false) {
   const lockClause = lockRows ? ' FOR UPDATE' : '';
@@ -57,11 +58,11 @@ async function loadAutoMatchInputs(eventId, connection = db, lockRows = false) {
   );
 
   const recentFightEntries = existingFightEntries
-    .slice(-AUTO_MATCH_ENTRY_GAP)
+    .slice(-autoMatchEntryGap)
     .map((fight) => [Number(fight.meron_entry_id), Number(fight.wala_entry_id)]);
 
   const noFightSet = await Owner.noFightSet();
-  const pairs = findAutoPairs(chickens, event, recentFightEntries, AUTO_MATCH_ENTRY_GAP, noFightSet);
+  const pairs = findAutoPairs(chickens, event, recentFightEntries, autoMatchEntryGap, noFightSet);
   const summary = summarizeAutoMatch(chickens, pairs, event);
 
   return {
@@ -70,7 +71,7 @@ async function loadAutoMatchInputs(eventId, connection = db, lockRows = false) {
     pairs,
     summary,
     preview: formatAutoMatchPreview(pairs),
-    message: buildAutoMatchMessage(summary)
+    message: buildAutoMatchMessage(summary, autoMatchEntryGap)
   };
 }
 
@@ -102,7 +103,7 @@ async function board(req, res, next) {
       available,
       matches,
       filters: req.query,
-      autoMatchEntryGap: AUTO_MATCH_ENTRY_GAP,
+      autoMatchEntryGap,
       noFightKeys: [...noFightSet]
     });
   } catch (error) {

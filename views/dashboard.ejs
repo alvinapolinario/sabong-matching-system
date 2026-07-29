@@ -26,6 +26,31 @@
   <% }) %>
 </div>
 
+<section class="panel mb-4">
+  <div class="panel-header">
+    <h2 class="h5 mb-0">Data Management</h2>
+    <a href="/reset" class="btn btn-sm btn-outline-danger">Open Reset & Backup</a>
+  </div>
+  <div class="row g-3 align-items-center">
+    <div class="col-md-8">
+      <p class="mb-2 text-muted small">
+        Reset creates an automatic SQL backup first, then clears all events, owners, entries, gamecocks, matches, and scores.
+      </p>
+      <% if (latestBackup) { %>
+        <div class="small">Latest backup: <code><%= latestBackup.filename %></code> · <%= new Date(latestBackup.created_at).toLocaleString() %></div>
+      <% } else { %>
+        <div class="small text-muted">No backups yet.</div>
+      <% } %>
+    </div>
+    <div class="col-md-4 d-flex gap-2 justify-content-md-end">
+      <form method="post" action="/reset/backup" class="m-0">
+        <button type="submit" class="btn btn-outline-primary btn-sm">Backup Now</button>
+      </form>
+      <a href="/reset" class="btn btn-danger btn-sm">Reset All Data</a>
+    </div>
+  </div>
+</section>
+
 <div class="row g-4">
   <div class="col-lg-6">
     <div class="panel">
@@ -62,7 +87,7 @@
           <tbody>
             <% matches.forEach((match) => { %>
               <tr>
-                <td>#<%= match.fight_no %></td>
+                <td>#<%= match.fight_no %><% if (match.marker_suffix) { %><span class="match-marker"><%= match.marker_suffix %></span><% } %></td>
                 <td><%= match.meron_owner %> / <%= match.meron_weight %>g</td>
                 <td><%= match.wala_owner %> / <%= match.wala_weight %>g</td>
                 <td><%= match.weight_difference %>g</td>

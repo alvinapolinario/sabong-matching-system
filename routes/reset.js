@@ -3,6 +3,7 @@ const express = require('express');
 const controller = require('../controllers/resetController');
 
 router.get('/', controller.form);
+router.post('/backup', controller.createBackup);
 router.post('/', controller.clearData);
 router.post('/restore', controller.restoreData);
 router.post(

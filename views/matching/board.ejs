@@ -75,7 +75,7 @@
         <button id="confirmMatch" class="btn btn-success btn-lg flex-fill" type="button">Confirm Match</button>
         <button id="autoMatch" class="btn btn-warning btn-lg flex-fill" type="button">Auto Match</button>
         <button id="removeUnfought" class="btn btn-danger btn-lg flex-fill" type="button">Remove Unfought</button>
-        <button id="resetBoard" class="btn btn-outline-light btn-lg" type="button"><i class="bi bi-arrow-counterclockwise"></i></button>
+        <button id="resetBoard" class="btn btn-outline-light btn-lg" type="button" title="Clear selected gamecocks from LEFT/RIGHT sides"><i class="bi bi-arrow-counterclockwise"></i></button>
       </div>
       <div class="small text-white-50 text-center auto-match-rules">
         <strong>Auto Match only:</strong> entries from the last <%= autoMatchEntryGap %> fights are skipped so the same entry does not appear again too soon.
@@ -90,10 +90,10 @@
       </div>
       <div id="matchesList" class="match-list">
         <% matches.forEach((match) => { %>
-          <article class="match-card" data-match-id="<%= match.match_id %>">
-            <div class="fight-no">Fight #<%= match.fight_no %></div>
-            <div><strong>LEFT SIDE:</strong> <%= match.meron_owner %> / <%= match.meron_weight %>g</div>
-            <div><strong>RIGHT SIDE:</strong> <%= match.wala_owner %> / <%= match.wala_weight %>g</div>
+          <article class="match-card" data-match-id="<%= match.match_id %>" data-marker-suffix="<%= match.marker_suffix %>">
+            <div class="fight-no">Fight #<%= match.fight_no %><% if (match.marker_suffix) { %><span class="match-marker"><%= match.marker_suffix %></span><% } %></div>
+            <div><strong>LEFT SIDE:</strong> <%= match.meron_owner %> / <%= match.meron_weight %>g<% if (match.is_mixed_type) { %> <span class="match-type-tag"><%= match.meron_type %></span><% } %></div>
+            <div><strong>RIGHT SIDE:</strong> <%= match.wala_owner %> / <%= match.wala_weight %>g<% if (match.is_mixed_type) { %> <span class="match-type-tag"><%= match.wala_type %></span><% } %></div>
             <div class="small text-white-50">Difference <%= match.weight_difference %>g / <%= match.status %></div>
             <% if (match.status === 'pending' || match.status === 'confirmed') { %>
               <button type="button" class="btn btn-sm btn-outline-warning w-100 mt-2 unmatch-btn">Change / Unmatch</button>
@@ -103,6 +103,7 @@
       </div>
     </section>
   </div>
+  <%- include('../partials/match-override-legend') %>
 </div>
 
 <div class="modal fade" id="overridePasscodeModal" tabindex="-1" aria-hidden="true">

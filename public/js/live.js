@@ -37,12 +37,16 @@
 
   function renderMatch(match) {
     const resultLabel = match.result && match.result !== 'pending' ? ` / ${match.result}` : '';
+    const markerSuffix = match.marker_suffix || '';
+    const markerHtml = markerSuffix ? `<span class="match-marker">${escapeHtml(markerSuffix)}</span>` : '';
+    const meronType = match.is_mixed_type ? ` (${escapeHtml(match.meron_type)})` : '';
+    const walaType = match.is_mixed_type ? ` (${escapeHtml(match.wala_type)})` : '';
     return `
       <article class="live-card">
-        <div class="live-fight">Fight #${match.fight_no}</div>
+        <div class="live-fight">Fight #${match.fight_no}${markerHtml}</div>
         <div class="live-sides">
-          <div><span>MERON</span><strong>${escapeHtml(match.meron_owner)}</strong><em>${match.meron_weight}g</em></div>
-          <div><span>WALA</span><strong>${escapeHtml(match.wala_owner)}</strong><em>${match.wala_weight}g</em></div>
+          <div><span>MERON</span><strong>${escapeHtml(match.meron_owner)}</strong><em>${match.meron_weight}g${meronType}</em></div>
+          <div><span>WALA</span><strong>${escapeHtml(match.wala_owner)}</strong><em>${match.wala_weight}g${walaType}</em></div>
         </div>
         <div class="live-meta">Difference ${match.weight_difference}g / ${match.status}${resultLabel}</div>
       </article>

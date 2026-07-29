@@ -165,14 +165,21 @@ Phased roadmap for the Sabong Matching System. Each phase has a clear goal, scop
 
 | # | Task | Status |
 |---|------|--------|
-| 7.1 | Bucket auto-match candidates by type/weight before pairing | `[ ]` |
-| 7.2 | Evaluate entry-gap semantics (block entry vs block entry-pair) with stakeholders | `[ ]` |
-| 7.3 | Consider globally better pairing (if fairness complaints arise) | `[ ]` |
+| 7.1 | Bucket auto-match candidates by type/weight before pairing | `[x]` |
+| 7.2 | Evaluate entry-gap semantics (block entry vs block entry-pair) with stakeholders | `[x]` |
+| 7.3 | Consider globally better pairing (if fairness complaints arise) | `[x]` |
 
 **Exit criteria**
-- [ ] Measurable improvement or explicit decision not to change algorithm
+- [x] Measurable improvement or explicit decision not to change algorithm
 
 **Estimated effort:** As needed
+
+**Outcomes**
+- Type/weight bucketing in `findAutoPairs` and `recommendedOpponents` (binary search on sorted weight buckets)
+- Documented decision: keep **per-entry** spacing block; manual confirm unchanged
+- Documented decision: keep **greedy** pairing; defer global optimization unless fairness issues arise
+- See `docs/MATCHING.md`
+- Future options: `docs/FUTURE_MATCHING_OPTIONS.md`
 
 ---
 
@@ -188,14 +195,14 @@ Phased roadmap for the Sabong Matching System. Each phase has a clear goal, scop
 | **6** | CI & deployment | 1 |
 | **7** | Performance (optional) | As needed |
 
-**Total (Phases 1–6):** ~8–13 focused sessions
+**Total (Phases 1–7):** ~8–13 focused sessions
 
 ---
 
 ## Current phase
 
-> **Phase 7 — Performance & Polish (optional)**  
-> Next task: **7.1** Bucket auto-match candidates (only if needed)
+> **All planned phases complete (1–7).**  
+> Optional follow-ups: global pairing optimization, entry-pair spacing mode — only if operators request them.
 
 ---
 
@@ -205,7 +212,9 @@ Record choices made during implementation so later phases stay consistent.
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
-| | | |
+| 2026-07-29 | Keep per-entry auto-match spacing (not entry-pair) | Simpler operator mental model; prevents same stable from reappearing too soon |
+| 2026-07-29 | Keep greedy auto-match pairing | Fast, tested, sufficient for typical pool sizes; global optimization deferred |
+| 2026-07-29 | Bucket auto-match by type + weight range | Same pairing results with fewer comparisons on large pools |
 
 ---
 
@@ -213,6 +222,7 @@ Record choices made during implementation so later phases stay consistent.
 
 | Date | Phase | Notes |
 |------|-------|-------|
+| 2026-07-29 | Phase 7 | Weight/type bucketing, matching docs, entry-gap and greedy pairing decisions |
 | 2026-07-29 | Phase 6 | Health check, GitHub Actions CI, production deployment docs |
 | 2026-07-29 | Phase 5 | Real-time sync across matching, fights, live, and TV |
 | 2026-07-29 | Phase 4 | Login rate limit, override audit log, trust proxy + secure cookies |

@@ -66,15 +66,15 @@
             </thead>
             <tbody id="fightReportBody">
               <% matches.forEach((match) => { %>
-                <tr data-match-id="<%= match.match_id %>">
+                <tr data-match-id="<%= match.match_id %>" data-marker-suffix="<%= match.marker_suffix %>">
                   <td><%= match.meron_entry %></td>
                   <td><%= match.meron_owner %></td>
                   <td><%= match.meron_legband %></td>
                   <td><%= match.meron_wingband %></td>
                   <td><%= match.meron_weight %></td>
-                  <td class="fight-no-cell"><%= match.fight_no %></td>
+                  <td class="fight-no-cell"><%= match.fight_no %><% if (match.marker_suffix) { %><span class="match-marker"><%= match.marker_suffix %></span><% } %></td>
                   <td class="vs-cell">VS</td>
-                  <td class="fight-no-cell"><%= match.fight_no %></td>
+                  <td class="fight-no-cell"><%= match.fight_no %><% if (match.marker_suffix) { %><span class="match-marker"><%= match.marker_suffix %></span><% } %></td>
                   <td><%= match.wala_weight %></td>
                   <td><%= match.wala_wingband %></td>
                   <td><%= match.wala_legband %></td>
@@ -109,8 +109,8 @@
             <thead><tr><th>Fight</th><th>Meron</th><th>Wala</th><th>Difference</th><th>Score</th><th>Status</th><th>TV</th><th></th></tr></thead>
             <tbody id="fightStatusBody">
               <% matches.forEach((match) => { %>
-                <tr data-match-id="<%= match.match_id %>">
-                  <td class="fw-semibold fight-status-no"><span class="drag-handle">☰</span> #<%= match.fight_no %></td>
+                <tr data-match-id="<%= match.match_id %>" data-marker-suffix="<%= match.marker_suffix %>">
+                  <td class="fw-semibold fight-status-no"><span class="drag-handle">☰</span> #<%= match.fight_no %><% if (match.marker_suffix) { %><span class="match-marker"><%= match.marker_suffix %></span><% } %></td>
                   <td class="fight-side-cell">
                     <div class="side-owner"><%= match.meron_owner %></div>
                     <div class="side-entry"><%= match.meron_entry %> / <%= match.meron_weight %>g</div>
@@ -241,6 +241,9 @@
       </div>
     </div>
   </div>
+</div>
+<div class="no-print mb-3">
+  <%- include('../partials/match-override-legend') %>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>

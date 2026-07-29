@@ -22,6 +22,16 @@ function optionalEnv(name, fallback) {
   return readEnv(name) ?? fallback;
 }
 
+function optionalPositiveInt(name, fallback) {
+  const raw = readEnv(name);
+  if (raw === null) return fallback;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error(`${name} must be a positive integer.`);
+  }
+  return value;
+}
+
 function validateProductionConfig(config) {
   if (!isProduction) return;
 
@@ -59,6 +69,7 @@ const config = {
   manualWeightOverridePasscode: isProduction
     ? requireEnv('MANUAL_WEIGHT_OVERRIDE_PASSCODE')
     : optionalEnv('MANUAL_WEIGHT_OVERRIDE_PASSCODE', loginPin),
+  autoMatchEntryGap: optionalPositiveInt('AUTO_MATCH_ENTRY_GAP', 5),
   db: {
     host: optionalEnv('DB_HOST', 'localhost'),
     port: Number(process.env.DB_PORT || 3306),

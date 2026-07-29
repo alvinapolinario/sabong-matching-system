@@ -506,12 +506,16 @@
     const actions = ['pending', 'confirmed'].includes(match.status)
       ? '<button type="button" class="btn btn-sm btn-outline-warning w-100 mt-2 unmatch-btn">Change / Unmatch</button>'
       : '';
+    const markerSuffix = match.marker_suffix || '';
+    const markerHtml = markerSuffix ? `<span class="match-marker">${escapeHtml(markerSuffix)}</span>` : '';
+    const meronType = match.is_mixed_type ? ` <span class="match-type-tag">${escapeHtml(match.meron_type)}</span>` : '';
+    const walaType = match.is_mixed_type ? ` <span class="match-type-tag">${escapeHtml(match.wala_type)}</span>` : '';
 
     return `
-      <article class="match-card" data-match-id="${match.match_id}">
-        <div class="fight-no">Fight #${match.fight_no}</div>
-        <div><strong>LEFT SIDE:</strong> ${escapeHtml(match.meron_owner)} / ${match.meron_weight}g</div>
-        <div><strong>RIGHT SIDE:</strong> ${escapeHtml(match.wala_owner)} / ${match.wala_weight}g</div>
+      <article class="match-card" data-match-id="${match.match_id}" data-marker-suffix="${markerSuffix}">
+        <div class="fight-no">Fight #${match.fight_no}${markerHtml}</div>
+        <div><strong>LEFT SIDE:</strong> ${escapeHtml(match.meron_owner)} / ${match.meron_weight}g${meronType}</div>
+        <div><strong>RIGHT SIDE:</strong> ${escapeHtml(match.wala_owner)} / ${match.wala_weight}g${walaType}</div>
         <div class="small text-white-50">Difference ${match.weight_difference}g / ${match.status}</div>
         ${actions}
       </article>

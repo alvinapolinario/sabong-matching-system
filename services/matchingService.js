@@ -43,19 +43,87 @@ function ownerPairBlocked(ownerAId, ownerBId, noFightSet = new Set()) {
   return noFightSet.has(noFightKey(ownerAId, ownerBId));
 }
 
+function compareEligibleChickens(a, b) {
+  return (
+    a.type.localeCompare(b.type)
+    || Number(a.weight) - Number(b.weight)
+    || a.owner_name.localeCompare(b.owner_name)
+    || Number(a.chicken_id) - Number(b.chicken_id)
+  );
+}
+
+function compareTypeBucketChickens(a, b) {
+  return (
+    Number(a.weight) - Number(b.weight)
+    || a.owner_name.localeCompare(b.owner_name)
+    || Number(a.chicken_id) - Number(b.chicken_id)
+  );
+}
+
+function lowerBoundByWeight(sortedList, minWeight) {
+  let low = 0;
+  let high = sortedList.length;
+  while (low < high) {
+    const mid = (low + high) >> 1;
+    if (Number(sortedList[mid].weight) < minWeight) low = mid + 1;
+    else high = mid;
+  }
+  return low;
+}
+
+function upperBoundByWeight(sortedList, maxWeight) {
+  let low = 0;
+  let high = sortedList.length;
+  while (low < high) {
+    const mid = (low + high) >> 1;
+    if (Number(sortedList[mid].weight) <= maxWeight) low = mid + 1;
+    else high = mid;
+  }
+  return low;
+}
+
+function buildTypeWeightBuckets(chickens, event) {
+  const buckets = new Map();
+  for (const chicken of chickens) {
+    if (!validAutoCandidate(chicken, event)) continue;
+    if (!buckets.has(chicken.type)) buckets.set(chicken.type, []);
+    buckets.get(chicken.type).push(chicken);
+  }
+
+  for (const bucket of buckets.values()) {
+    bucket.sort(compareTypeBucketChickens);
+  }
+
+  return buckets;
+}
+
+function weightCompatibleRange(bucket, baseWeight, giveTakeGrams) {
+  const minWeight = baseWeight - giveTakeGrams;
+  const maxWeight = baseWeight + giveTakeGrams;
+  return {
+    start: lowerBoundByWeight(bucket, minWeight),
+    end: upperBoundByWeight(bucket, maxWeight)
+  };
+}
+
 function recommendedOpponents(chickens, baseChicken, event, noFightSet = new Set()) {
   if (validateChicken(baseChicken, event)) return [];
 
-  return chickens.filter((chicken) => {
-    if (Number(chicken.chicken_id) === Number(baseChicken.chicken_id)) return false;
-    if (Number(chicken.owner_id) === Number(baseChicken.owner_id)) return false;
-    if (ownerPairBlocked(chicken.owner_id, baseChicken.owner_id, noFightSet)) return false;
-    if (chicken.type !== baseChicken.type) return false;
-    if (validateChicken(chicken, event)) return false;
+  const giveTakeGrams = Number(event.give_take_grams);
+  const baseWeight = Number(baseChicken.weight);
+  const typeBucket = buildTypeWeightBuckets(chickens, event).get(baseChicken.type) || [];
+  const { start, end } = weightCompatibleRange(typeBucket, baseWeight, giveTakeGrams);
 
-    const difference = Math.abs(Number(chicken.weight) - Number(baseChicken.weight));
-    return difference <= Number(event.give_take_grams);
-  });
+  const opponents = [];
+  for (let index = start; index < end; index += 1) {
+    const chicken = typeBucket[index];
+    if (Number(chicken.chicken_id) === Number(baseChicken.chicken_id)) continue;
+    if (Number(chicken.owner_id) === Number(baseChicken.owner_id)) continue;
+    if (ownerPairBlocked(chicken.owner_id, baseChicken.owner_id, noFightSet)) continue;
+    opponents.push(chicken);
+  }
+
+  return opponents;
 }
 
 function validAutoCandidate(chicken, event) {
@@ -120,16 +188,27 @@ function comparePairPriority(candidate, current, pairs, entryAvailableCounts, ev
   return current;
 }
 
+function considerAutoPair(base, opponent, blockedEntries, used, noFightSet, giveTakeGrams) {
+  if (used.has(Number(opponent.chicken_id))) return null;
+  if (Number(base.chicken_id) === Number(opponent.chicken_id)) return null;
+  if (Number(base.owner_id) === Number(opponent.owner_id)) return null;
+  if (ownerPairBlocked(base.owner_id, opponent.owner_id, noFightSet)) return null;
+  if (base.type !== opponent.type) return null;
+  if (blockedEntries.has(Number(opponent.entry_id))) return null;
+
+  const difference = Math.abs(Number(base.weight) - Number(opponent.weight));
+  if (difference > giveTakeGrams) return null;
+
+  return { meron: base, wala: opponent, difference };
+}
+
 function findAutoPairs(chickens, event, recentFightEntries = [], entryGap = AUTO_MATCH_ENTRY_GAP, noFightSet = new Set()) {
   const recentHistory = recentFightEntries.map((entryPair) => [...entryPair]);
   const available = chickens
     .filter((chicken) => validAutoCandidate(chicken, event))
-    .sort((a, b) => (
-      a.type.localeCompare(b.type)
-      || Number(a.weight) - Number(b.weight)
-      || a.owner_name.localeCompare(b.owner_name)
-      || Number(a.chicken_id) - Number(b.chicken_id)
-    ));
+    .sort(compareEligibleChickens);
+  const typeBuckets = buildTypeWeightBuckets(chickens, event);
+  const giveTakeGrams = Number(event.give_take_grams);
   const used = new Set();
   const pairs = [];
   const entryAvailableCounts = countAvailableByEntry(available);
@@ -142,18 +221,23 @@ function findAutoPairs(chickens, event, recentFightEntries = [], entryGap = AUTO
       if (used.has(Number(base.chicken_id))) continue;
       if (blockedEntries.has(Number(base.entry_id))) continue;
 
-      for (const opponent of available) {
-        if (used.has(Number(opponent.chicken_id))) continue;
-        if (Number(base.chicken_id) === Number(opponent.chicken_id)) continue;
-        if (Number(base.owner_id) === Number(opponent.owner_id)) continue;
-        if (ownerPairBlocked(base.owner_id, opponent.owner_id, noFightSet)) continue;
-        if (base.type !== opponent.type) continue;
-        if (blockedEntries.has(Number(opponent.entry_id))) continue;
+      const typeBucket = typeBuckets.get(base.type) || [];
+      const baseWeight = Number(base.weight);
+      const { start, end } = weightCompatibleRange(typeBucket, baseWeight, giveTakeGrams);
 
-        const difference = Math.abs(Number(base.weight) - Number(opponent.weight));
-        if (difference > Number(event.give_take_grams)) continue;
+      for (let index = start; index < end; index += 1) {
+        const candidatePair = considerAutoPair(
+          base,
+          typeBucket[index],
+          blockedEntries,
+          used,
+          noFightSet,
+          giveTakeGrams
+        );
+        if (!candidatePair) continue;
+
         bestPair = comparePairPriority(
-          { meron: base, wala: opponent, difference },
+          candidatePair,
           bestPair,
           pairs,
           entryAvailableCounts,
@@ -224,6 +308,12 @@ module.exports = {
   validateChicken,
   noFightKey,
   ownerPairBlocked,
+  compareEligibleChickens,
+  compareTypeBucketChickens,
+  lowerBoundByWeight,
+  upperBoundByWeight,
+  buildTypeWeightBuckets,
+  weightCompatibleRange,
   recommendedOpponents,
   validAutoCandidate,
   recentEntrySet,
@@ -231,6 +321,7 @@ module.exports = {
   countUsedByEntry,
   pairPriority,
   comparePairPriority,
+  considerAutoPair,
   findAutoPairs,
   summarizeAutoMatch,
   buildAutoMatchMessage,

@@ -95,16 +95,27 @@
     });
   }
 
+  function markerSuffix(row) {
+    return row.dataset.markerSuffix || '';
+  }
+
+  function markerHtml(row) {
+    const suffix = markerSuffix(row);
+    return suffix ? `<span class="match-marker">${suffix}</span>` : '';
+  }
+
   function renumberRows() {
     rows(reportBody).forEach((row, index) => {
+      const suffixHtml = markerHtml(row);
       row.querySelectorAll('.fight-no-cell').forEach((cell) => {
-        cell.textContent = index + 1;
+        cell.innerHTML = `${index + 1}${suffixHtml}`;
       });
     });
     if (statusBody) {
       rows(statusBody).forEach((row, index) => {
+        const suffixHtml = markerHtml(row);
         const cell = row.querySelector('.fight-status-no');
-        if (cell) cell.innerHTML = `<span class="drag-handle">☰</span> #${index + 1}`;
+        if (cell) cell.innerHTML = `<span class="drag-handle">☰</span> #${index + 1}${suffixHtml}`;
       });
     }
   }

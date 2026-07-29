@@ -10,14 +10,35 @@ const RESET_CODE = 'RESET';
 
 async function form(req, res, next) {
   try {
+    const backups = await Backup.listBackups();
     res.render('reset/index', {
       title: 'Reset Data',
       error: req.query.error || '',
       success: req.query.success || '',
-      backups: await Backup.listBackups()
+      backups
     });
   } catch (error) {
     next(error);
+  }
+}
+
+async function createBackup(req, res, next) {
+  try {
+    const backup = await Backup.createBackup('manual');
+    if (req.accepts('json') && !req.accepts('html')) {
+      return res.json({
+        ok: true,
+        message: `Backup ${backup.filename} created.`,
+        filename: backup.filename
+      });
+    }
+    res.redirect(`/reset?success=${encodeURIComponent(`Backup ${backup.filename} created.`)}`);
+  } catch (error) {
+    console.error(error);
+    if (req.accepts('json') && !req.accepts('html')) {
+      return res.status(500).json({ ok: false, message: error.message || 'Unable to create backup.' });
+    }
+    res.redirect(`/reset?error=${encodeURIComponent(error.message || 'Unable to create backup.')}`);
   }
 }
 
@@ -109,4 +130,4 @@ async function uploadRestoreData(req, res, next) {
   }
 }
 
-module.exports = { form, clearData, restoreData, uploadRestoreData };
+module.exports = { form, createBackup, clearData, restoreData, uploadRestoreData };

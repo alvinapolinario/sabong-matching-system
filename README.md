@@ -186,9 +186,15 @@ Auto-match and manual confirm enforce these constraints:
 - Owner "no fight" pairs are blocked
 - Gamecocks must be `available` and within event weight/type rules
 - Weight difference must be within the event's give/take tolerance (manual override available with passcode)
-- Auto-match additionally enforces a 5-fight entry spacing rule to avoid repeat entry appearances
+- Auto-match additionally enforces entry spacing (default: last 5 fights) so the same entry does not appear again too soon
 
-See `controllers/matchingController.js` for the full algorithm.
+Full algorithm, entry-spacing semantics, and performance notes: **[docs/MATCHING.md](docs/MATCHING.md)**.
+
+Optional future enhancements (entry-pair spacing, global pairing): **[docs/FUTURE_MATCHING_OPTIONS.md](docs/FUTURE_MATCHING_OPTIONS.md)**.
+
+| Env var | Default | Purpose |
+|---------|---------|---------|
+| `AUTO_MATCH_ENTRY_GAP` | `5` | Number of recent fights used for auto-match entry spacing |
 
 ## Socket.IO events
 

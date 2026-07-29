@@ -215,6 +215,51 @@ body {
   margin-bottom: .35rem;
 }
 
+.match-marker {
+  color: #f59e0b;
+  font-weight: 700;
+}
+
+.match-override-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem .75rem;
+  align-items: center;
+  margin-top: .75rem;
+}
+
+.match-override-legend-sep {
+  opacity: 0.45;
+}
+
+.match-type-tag {
+  display: inline-block;
+  margin-left: .25rem;
+  padding: 0 .35rem;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  font-size: .75rem;
+  text-transform: uppercase;
+}
+
+.matching-page .match-override-legend {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.matching-page .match-override-legend strong {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.live-board .match-override-legend {
+  color: rgba(255, 255, 255, 0.65);
+  padding: 0 .5rem .5rem;
+}
+
+.live-board .match-override-legend strong {
+  color: rgba(255, 255, 255, 0.85);
+}
+
 .band-line {
   margin-top: .35rem;
   color: #c8d2e4;
