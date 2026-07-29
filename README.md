@@ -81,7 +81,7 @@ npm install
 mysql -u root -p < sql/schema.sql
 ```
 
-For an existing database, apply numbered migrations in `sql/` in order (`001` through `005`).
+For an existing database, apply numbered migrations in `sql/` in order (`001` through `006`).
 
 ### 3. Configure environment
 
@@ -116,6 +116,7 @@ Copy from [`.env.example`](.env.example). All configuration is loaded via [`conf
 | `MANUAL_MIXED_TYPE_PASSCODE` | `LOGIN_PIN` | Passcode for manual cross-type matches |
 | `MANUAL_WEIGHT_OVERRIDE_PASSCODE` | `LOGIN_PIN` | Passcode for manual matches exceeding weight tolerance |
 | `COOKIE_SECURE` | `false` | Set `true` when serving over HTTPS |
+| `TRUST_PROXY` | `false` | Set `true` behind a reverse proxy (for correct client IP + secure cookies) |
 | `DB_HOST` | `localhost` | MySQL host (`db` inside Docker Compose) |
 | `DB_PORT` | `3306` | MySQL port |
 | `DB_USER` | `root` | MySQL user |
@@ -132,6 +133,11 @@ When `NODE_ENV=production`, the app **refuses to start** unless:
 - `MANUAL_WEIGHT_OVERRIDE_PASSCODE` is set and **differs** from `LOGIN_PIN`
 
 Set `COOKIE_SECURE=true` when running behind HTTPS.
+Set `TRUST_PROXY=true` when running behind nginx, Caddy, or similar so client IPs and secure cookies work correctly.
+
+Login is rate-limited to 5 failed attempts per IP every 15 minutes.
+
+Manual match overrides (weight / mixed type) are stored in the `override_logs` table and viewable at `/audit/overrides`.
 
 ## Project Structure
 
@@ -169,6 +175,7 @@ backups/            SQL backup storage (gitignored)
 | `/fights` | Required | Fight management |
 | `/live` | Required | Live board |
 | `/reset` | Required | Data reset and restore |
+| `/audit/overrides` | Required | Manual override audit log + CSV export |
 
 ## Matching Rules
 

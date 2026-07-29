@@ -13,6 +13,10 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+if (config.trustProxy) {
+  app.set('trust proxy', 1);
+}
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -55,6 +59,7 @@ app.use('/matching', require('./routes/matching'));
 app.use('/fights', require('./routes/fights'));
 app.use('/live', require('./routes/live'));
 app.use('/reset', require('./routes/reset'));
+app.use('/audit', require('./routes/audit'));
 
 app.use((req, res) => {
   res.status(404).render('error', {

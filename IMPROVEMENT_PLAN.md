@@ -98,16 +98,16 @@ Phased roadmap for the Sabong Matching System. Each phase has a clear goal, scop
 
 | # | Task | Status |
 |---|------|--------|
-| 4.1 | Rate-limit `/login` (per IP, e.g. 5 attempts / 15 min) | `[ ]` |
-| 4.2 | `override_logs` table + persist weight/type override events | `[ ]` |
-| 4.3 | Log: event, chickens, difference, type mismatch, timestamp, session id | `[ ]` |
-| 4.4 | Optional admin view or export for override logs | `[ ]` |
-| 4.5 | Secure cookie flags for production (`secure`, `trust proxy`) | `[ ]` |
+| 4.1 | Rate-limit `/login` (per IP, e.g. 5 attempts / 15 min) | `[x]` |
+| 4.2 | `override_logs` table + persist weight/type override events | `[x]` |
+| 4.3 | Log: event, chickens, difference, type mismatch, timestamp, session id | `[x]` |
+| 4.4 | Optional admin view or export for override logs | `[x]` |
+| 4.5 | Secure cookie flags for production (`secure`, `trust proxy`) | `[x]` |
 
 **Exit criteria**
-- [ ] Brute-force PIN guessing is throttled
-- [ ] Every manual override is queryable in the database
-- [ ] Production session cookies follow HTTPS best practices
+- [x] Brute-force PIN guessing is throttled
+- [x] Every manual override is queryable in the database
+- [x] Production session cookies follow HTTPS best practices
 
 **Estimated effort:** 1–2 sessions
 
@@ -194,8 +194,8 @@ Phased roadmap for the Sabong Matching System. Each phase has a clear goal, scop
 
 ## Current phase
 
-> **Phase 4 — Security & Audit Trail**  
-> Next task: **4.1** Rate-limit `/login`
+> **Phase 5 — Real-time & Multi-operator**  
+> Next task: **5.1** Emit Socket events on fight reorder
 
 ---
 
@@ -213,6 +213,7 @@ Record choices made during implementation so later phases stay consistent.
 
 | Date | Phase | Notes |
 |------|-------|-------|
+| 2026-07-29 | Phase 4 | Login rate limit, override audit log, trust proxy + secure cookies |
 | 2026-07-29 | Phase 3 | Matching board UX: no-fight warnings, modals, auto-match preview |
 | 2026-07-29 | Phase 2 | Matching service extraction, unit tests, partial auto-match |
 | 2026-07-29 | Phase 1 | Central config module, production validation, Sabong branding |

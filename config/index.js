@@ -51,6 +51,7 @@ const config = {
   sessionCookieName: 'sabong.sid',
   appName: 'Sabong Matching System',
   cookieSecure: process.env.COOKIE_SECURE === 'true',
+  trustProxy: process.env.TRUST_PROXY === 'true',
   loginPin,
   manualMixedTypePasscode: isProduction
     ? requireEnv('MANUAL_MIXED_TYPE_PASSCODE')

@@ -4,6 +4,7 @@ const Event = require('../models/eventModel');
 const Chicken = require('../models/chickenModel');
 const Match = require('../models/matchModel');
 const Owner = require('../models/ownerModel');
+const OverrideLog = require('../models/overrideLogModel');
 const Matching = require('../services/matchingService');
 
 const {
@@ -300,7 +301,10 @@ async function confirm(req, res, next) {
     }
 
     const difference = Math.abs(Number(meron.weight) - Number(wala.weight));
-    if (difference > Number(event.give_take_grams)) {
+    const weightOverride = difference > Number(event.give_take_grams);
+    const typeOverride = meron.type !== wala.type;
+
+    if (weightOverride) {
       const overridePasscode = String(req.body.override_passcode || '').trim();
       if (overridePasscode !== config.manualWeightOverridePasscode) {
         await connection.rollback();
@@ -309,13 +313,9 @@ async function confirm(req, res, next) {
           message: `Weight difference is ${difference}g. Limit is ${event.give_take_grams}g. Override passcode is required.`
         });
       }
-
-      console.info(
-        `Manual weight override approved: event=${eventId}, left=${meronId}:${meron.weight}g, right=${walaId}:${wala.weight}g, difference=${difference}g`
-      );
     }
 
-    if (meron.type !== wala.type) {
+    if (typeOverride) {
       const overridePasscode = String(req.body.override_passcode || '').trim();
       if (overridePasscode !== config.manualMixedTypePasscode) {
         await connection.rollback();
@@ -324,10 +324,29 @@ async function confirm(req, res, next) {
           message: 'Mixed type manual match requires the confirmation passcode.'
         });
       }
+    }
 
-      console.info(
-        `Manual mixed type match approved: event=${eventId}, left=${meronId}:${meron.type}, right=${walaId}:${wala.type}`
-      );
+    if (weightOverride || typeOverride) {
+      let overrideType = 'weight';
+      if (weightOverride && typeOverride) overrideType = 'both';
+      else if (typeOverride) overrideType = 'mixed_type';
+
+      await OverrideLog.create({
+        event_id: eventId,
+        override_type: overrideType,
+        meron_chicken_id: meronId,
+        wala_chicken_id: walaId,
+        meron_owner_name: meron.owner_name,
+        wala_owner_name: wala.owner_name,
+        meron_weight: meron.weight,
+        wala_weight: wala.weight,
+        weight_difference: difference,
+        meron_type: meron.type,
+        wala_type: wala.type,
+        give_take_grams: event.give_take_grams,
+        session_id: req.sessionID || null,
+        ip_address: req.ip || null
+      }, connection);
     }
 
     const fightNo = await Match.nextFightNo(eventId, connection);

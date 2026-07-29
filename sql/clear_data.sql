@@ -3,6 +3,7 @@ USE matching_db;
 SET FOREIGN_KEY_CHECKS = 0;
 
 TRUNCATE TABLE matches;
+TRUNCATE TABLE override_logs;
 TRUNCATE TABLE entry_data;
 TRUNCATE TABLE entries;
 TRUNCATE TABLE owner_no_fights;

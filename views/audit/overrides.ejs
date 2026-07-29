@@ -1,0 +1,60 @@
+<%- include('../layouts/header') %>
+<div class="page-heading">
+  <div>
+    <h1 class="h3 mb-1">Override Audit Log</h1>
+    <div class="text-muted">Manual weight and mixed-type override history</div>
+  </div>
+  <a href="/audit/overrides/export.csv<%= selectedEvent ? '?event_id=' + selectedEvent : '' %>" class="btn btn-outline-primary">
+    Export CSV
+  </a>
+</div>
+
+<form class="matching-filters mb-3" method="get">
+  <select name="event_id" class="form-select">
+    <option value="">All events</option>
+    <% events.forEach((item) => { %>
+      <option value="<%= item.event_id %>" <%= String(selectedEvent) === String(item.event_id) ? 'selected' : '' %>><%= item.event_name %></option>
+    <% }) %>
+  </select>
+  <button class="btn btn-light">Filter</button>
+</form>
+
+<section class="panel">
+  <% if (!logs.length) { %>
+    <p class="text-muted mb-0">No override entries recorded yet.</p>
+  <% } else { %>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped align-middle mb-0">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Event</th>
+            <th>Type</th>
+            <th>LEFT SIDE</th>
+            <th>RIGHT SIDE</th>
+            <th>Diff</th>
+            <th>Limit</th>
+            <th>Session</th>
+            <th>IP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% logs.forEach((log) => { %>
+            <tr>
+              <td><%= new Date(log.created_at).toLocaleString() %></td>
+              <td><%= log.event_name %></td>
+              <td><span class="badge text-bg-warning"><%= log.override_type %></span></td>
+              <td><%= log.meron_owner_name %> / <%= log.meron_weight %>g / <%= log.meron_type %></td>
+              <td><%= log.wala_owner_name %> / <%= log.wala_weight %>g / <%= log.wala_type %></td>
+              <td><%= log.weight_difference %>g</td>
+              <td><%= log.give_take_grams %>g</td>
+              <td class="small"><%= log.session_id || '—' %></td>
+              <td class="small"><%= log.ip_address || '—' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+<%- include('../layouts/footer') %>
