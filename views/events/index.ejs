@@ -1,0 +1,32 @@
+<%- include('../layouts/header') %>
+<div class="page-heading">
+  <h1 class="h3">Event Management</h1>
+  <a href="/events/new" class="btn btn-dark"><i class="bi bi-plus-lg"></i> New Event</a>
+</div>
+<div class="panel table-responsive">
+  <table class="table align-middle">
+    <thead><tr><th>Event</th><th>Date</th><th>Venue</th><th>Give/Take</th><th>Allowed</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      <% events.forEach((event) => { %>
+        <tr>
+          <td class="fw-semibold"><%= event.event_name %></td>
+          <td><%= event.event_date %></td>
+          <td><%= event.venue %></td>
+          <td><%= event.give_take_grams %>g</td>
+          <td>
+            <% if (event.allow_cock) { %><span class="badge text-bg-dark">cock</span><% } %>
+            <% if (event.allow_stag) { %><span class="badge text-bg-primary">stag</span><% } %>
+            <% if (event.allow_bullstag) { %><span class="badge text-bg-secondary">bullstag</span><% } %>
+          </td>
+          <td><span class="badge text-bg-info"><%= event.status %></span></td>
+          <td class="text-end">
+            <a href="/entries/new?event_id=<%= event.event_id %>" class="btn btn-sm btn-outline-primary">Entry</a>
+            <a href="/matching?event_id=<%= event.event_id %>" class="btn btn-sm btn-outline-dark">Match</a>
+            <a href="/events/<%= event.event_id %>/edit" class="btn btn-sm btn-outline-secondary">Edit</a>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<%- include('../layouts/footer') %>

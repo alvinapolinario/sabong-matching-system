@@ -1,0 +1,247 @@
+<%- include('../layouts/header') %>
+<div class="page-heading">
+  <h1 class="h3">Fight Schedule</h1>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-outline-dark" onclick="window.print()"><i class="bi bi-printer"></i> Print Report</button>
+    <a href="/matching?event_id=<%= selectedEvent %>" class="btn btn-dark">Matching Board</a>
+  </div>
+</div>
+<div id="fightOrderAlert" class="alert d-none no-print"></div>
+<form class="panel mb-3" method="get">
+  <div class="row g-3 align-items-end">
+    <div class="col-md-5">
+      <label class="form-label">Event</label>
+      <select name="event_id" class="form-select">
+        <% events.forEach((event) => { %>
+          <option value="<%= event.event_id %>" <%= String(selectedEvent) === String(event.event_id) ? 'selected' : '' %>><%= event.event_name %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-2"><button class="btn btn-outline-dark w-100">Load</button></div>
+  </div>
+</form>
+
+<div class="accordion fights-accordion" id="fightsAccordion">
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="fightReportHeading">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fightReportPanel" aria-expanded="false" aria-controls="fightReportPanel">
+        Printable Fight Report
+      </button>
+    </h2>
+    <div id="fightReportPanel" class="accordion-collapse collapse" aria-labelledby="fightReportHeading">
+      <div class="accordion-body p-0">
+        <div class="fight-report-wrap" data-event-id="<%= selectedEvent %>">
+          <table class="fight-report">
+            <colgroup>
+              <col class="report-entry">
+              <col class="report-owner">
+              <col class="report-lb">
+              <col class="report-wb">
+              <col class="report-wt">
+              <col class="report-fight">
+              <col class="report-vs">
+              <col class="report-fight">
+              <col class="report-wt">
+              <col class="report-wb">
+              <col class="report-lb">
+              <col class="report-owner">
+              <col class="report-entry">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>ENTRY NAME</th>
+                <th>OWNER</th>
+                <th>LB</th>
+                <th>WB</th>
+                <th>WT</th>
+                <th>F#</th>
+                <th class="vs-head"></th>
+                <th>F#</th>
+                <th>WT</th>
+                <th>WB</th>
+                <th>LB</th>
+                <th>OWNER</th>
+                <th>ENTRY NAME</th>
+              </tr>
+            </thead>
+            <tbody id="fightReportBody">
+              <% matches.forEach((match) => { %>
+                <tr data-match-id="<%= match.match_id %>">
+                  <td><%= match.meron_entry %></td>
+                  <td><%= match.meron_owner %></td>
+                  <td><%= match.meron_legband %></td>
+                  <td><%= match.meron_wingband %></td>
+                  <td><%= match.meron_weight %></td>
+                  <td class="fight-no-cell"><%= match.fight_no %></td>
+                  <td class="vs-cell">VS</td>
+                  <td class="fight-no-cell"><%= match.fight_no %></td>
+                  <td><%= match.wala_weight %></td>
+                  <td><%= match.wala_wingband %></td>
+                  <td><%= match.wala_legband %></td>
+                  <td><%= match.wala_owner %></td>
+                  <td><%= match.wala_entry %></td>
+                </tr>
+              <% }) %>
+              <% if (!matches.length) { %>
+                <tr><td colspan="13" class="empty-report">No fights matched yet.</td></tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item no-print">
+    <h2 class="accordion-header" id="fightStatusHeading">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fightStatusPanel" aria-expanded="true" aria-controls="fightStatusPanel">
+        Fight Status
+      </button>
+    </h2>
+    <div id="fightStatusPanel" class="accordion-collapse collapse show" aria-labelledby="fightStatusHeading">
+      <div class="accordion-body">
+        <div class="panel-header">
+          <h2 class="h5 mb-0">Fight Status</h2>
+          <span class="text-muted small">Drag rows to arrange before printing.</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead><tr><th>Fight</th><th>Meron</th><th>Wala</th><th>Difference</th><th>Score</th><th>Status</th><th>TV</th><th></th></tr></thead>
+            <tbody id="fightStatusBody">
+              <% matches.forEach((match) => { %>
+                <tr data-match-id="<%= match.match_id %>">
+                  <td class="fw-semibold fight-status-no"><span class="drag-handle">☰</span> #<%= match.fight_no %></td>
+                  <td class="fight-side-cell">
+                    <div class="side-owner"><%= match.meron_owner %></div>
+                    <div class="side-entry"><%= match.meron_entry %> / <%= match.meron_weight %>g</div>
+                    <div class="side-actions">
+                      <% if (!match.result || match.result === 'pending') { %>
+                        <form method="post" action="/fights/<%= match.match_id %>/result?_method=PUT" class="winner-form">
+                          <input type="hidden" name="result" value="meron">
+                          <button class="winner-btn">Winner</button>
+                        </form>
+                      <% } else if (match.result === 'meron') { %>
+                        <span class="badge text-bg-success mt-1">Winner</span>
+                      <% } %>
+                      <form method="post" action="/fights/<%= match.match_id %>/tv-meron?_method=PUT" class="tv-side-radio-form <%= match.active_tv ? '' : 'd-none' %>">
+                        <input type="hidden" name="chicken_id" value="<%= match.meron_chicken_id %>">
+                        <label class="tv-side-radio">
+                          <input
+                            type="radio"
+                            name="tv_meron_<%= match.match_id %>"
+                            <%= Number(match.tv_meron_chicken_id || match.meron_chicken_id) === Number(match.meron_chicken_id) ? 'checked' : '' %>
+                          >
+                          Meron
+                        </label>
+                      </form>
+                    </div>
+                  </td>
+                  <td class="fight-side-cell">
+                    <div class="side-owner"><%= match.wala_owner %></div>
+                    <div class="side-entry"><%= match.wala_entry %> / <%= match.wala_weight %>g</div>
+                    <div class="side-actions">
+                      <% if (!match.result || match.result === 'pending') { %>
+                        <form method="post" action="/fights/<%= match.match_id %>/result?_method=PUT" class="winner-form">
+                          <input type="hidden" name="result" value="wala">
+                          <button class="winner-btn">Winner</button>
+                        </form>
+                      <% } else if (match.result === 'wala') { %>
+                        <span class="badge text-bg-success mt-1">Winner</span>
+                      <% } %>
+                      <form method="post" action="/fights/<%= match.match_id %>/tv-meron?_method=PUT" class="tv-side-radio-form <%= match.active_tv ? '' : 'd-none' %>">
+                        <input type="hidden" name="chicken_id" value="<%= match.wala_chicken_id %>">
+                        <label class="tv-side-radio">
+                          <input
+                            type="radio"
+                            name="tv_meron_<%= match.match_id %>"
+                            <%= Number(match.tv_meron_chicken_id || match.meron_chicken_id) === Number(match.wala_chicken_id) ? 'checked' : '' %>
+                          >
+                          Meron
+                        </label>
+                      </form>
+                    </div>
+                  </td>
+                  <td><%= match.weight_difference %>g</td>
+                  <td>
+                    <% if (match.result && match.result !== 'pending') { %>
+                      <strong><%= Number(match.meron_score).toFixed(1).replace('.0', '') %></strong>
+                      -
+                      <strong><%= Number(match.wala_score).toFixed(1).replace('.0', '') %></strong>
+                    <% } else { %>
+                      <span class="text-muted">No result</span>
+                    <% } %>
+                    <div class="d-flex gap-1 mt-2">
+                      <% if (!match.result || match.result === 'pending') { %>
+                        <form method="post" action="/fights/<%= match.match_id %>/result?_method=PUT">
+                          <input type="hidden" name="result" value="draw">
+                          <button class="btn btn-sm btn-outline-warning">Draw</button>
+                        </form>
+                      <% } %>
+                      <form method="post" action="/fights/<%= match.match_id %>/result?_method=PUT">
+                        <input type="hidden" name="result" value="pending">
+                        <button class="btn btn-sm btn-outline-secondary">Clear</button>
+                      </form>
+                    </div>
+                  </td>
+                  <td><span class="badge text-bg-secondary"><%= match.status %></span></td>
+                  <td>
+                    <form method="post" action="/fights/<%= match.match_id %>/active?_method=PUT" class="tv-active-form">
+                      <label class="tv-active-radio">
+                        <input
+                          type="radio"
+                          name="active_tv_fight"
+                          <%= match.active_tv ? 'checked' : '' %>
+                        >
+                        Active
+                      </label>
+                    </form>
+                    <div class="small text-muted tv-active-note <%= match.active_tv ? '' : 'd-none' %>">Select Meron radio beside entry.</div>
+                  </td>
+                  <td>
+                    <form method="post" action="/fights/<%= match.match_id %>/status?_method=PUT" class="d-flex gap-2">
+                      <select name="status" class="form-select form-select-sm">
+                        <% ['pending','confirmed','done','cancelled'].forEach((status) => { %>
+                          <option value="<%= status %>" <%= match.status === status ? 'selected' : '' %>><%= status %></option>
+                        <% }) %>
+                      </select>
+                      <button class="btn btn-sm btn-outline-dark">Save</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item no-print">
+    <h2 class="accordion-header" id="entryScoreHeading">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#entryScorePanel" aria-expanded="false" aria-controls="entryScorePanel">
+        Entry Scoreboard
+      </button>
+    </h2>
+    <div id="entryScorePanel" class="accordion-collapse collapse" aria-labelledby="entryScoreHeading">
+      <div class="accordion-body">
+        <div class="scoreboard-grid">
+          <% scores.forEach((score) => { %>
+            <article class="score-card">
+              <div class="score-card-title"><%= score.entry_name %>/<%= score.owner_name %></div>
+              <div class="score-card-row">
+                <div class="score-brackets"><%= score.score_breakdown %></div>
+                <div class="score-total"><%= Number(score.result_count) > 0 ? Number(score.total_score).toFixed(1).replace('.0', '') : '' %></div>
+              </div>
+            </article>
+          <% }) %>
+          <% if (!scores.length) { %>
+            <div class="text-muted text-center py-3">No entry scores yet.</div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="/js/fights.js"></script>
+<%- include('../layouts/footer') %>

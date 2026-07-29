@@ -1,0 +1,128 @@
+<%- include('../layouts/header') %>
+<div class="page-heading">
+  <h1 class="h3">Reset Data</h1>
+</div>
+
+<section class="panel" style="max-width: 760px;">
+  <div class="alert alert-warning">
+    This will create a database backup first, then clear events, owners, entries, Gamecocks, matches, scores, and TV state.
+  </div>
+
+  <% if (error) { %>
+    <div class="alert alert-danger"><%= error %></div>
+  <% } %>
+
+  <% if (success) { %>
+    <div class="alert alert-success"><%= success %></div>
+  <% } %>
+
+  <form method="post" action="/reset">
+    <label class="form-label">Type RESET to confirm</label>
+    <input required name="confirmation" class="form-control mb-3" autocomplete="off">
+    <button class="btn btn-danger">Backup and Clear All Data</button>
+  </form>
+</section>
+
+<section class="panel mt-3" style="max-width: 760px;">
+  <h2 class="h5 mb-3">Restore Backup</h2>
+  <div class="alert alert-info">
+    Restoring replaces the current database with the selected backup. A fresh backup is created before restore.
+  </div>
+
+  <% if (backups.length) { %>
+    <form method="post" action="/reset/restore">
+      <label class="form-label">Backup file</label>
+      <select required name="backup_file" class="form-select mb-3">
+        <% backups.forEach((backup) => { %>
+          <option value="<%= backup.filename %>">
+            <%= backup.filename %> (<%= Math.ceil(backup.size / 1024) %> KB)
+          </option>
+        <% }) %>
+      </select>
+
+      <label class="form-label">Type RESET to confirm restore</label>
+      <input required name="confirmation" class="form-control mb-3" autocomplete="off">
+      <button class="btn btn-primary">Restore Selected Backup</button>
+    </form>
+  <% } else { %>
+    <div class="text-muted">No backups have been created yet.</div>
+  <% } %>
+</section>
+
+<section class="panel mt-3" style="max-width: 760px;">
+  <h2 class="h5 mb-3">Upload and Restore SQL Backup</h2>
+  <div id="uploadRestoreAlert" class="alert d-none"></div>
+  <div class="alert alert-info">
+    Select a `.sql` backup from your computer. The system creates a fresh backup first, then restores the uploaded file.
+  </div>
+
+  <form id="uploadRestoreForm">
+    <label class="form-label">SQL backup file</label>
+    <input required type="file" id="backupUploadFile" class="form-control mb-3" accept=".sql,application/sql,text/plain">
+
+    <label class="form-label">Type RESET to confirm upload restore</label>
+    <input required id="backupUploadConfirmation" class="form-control mb-3" autocomplete="off">
+    <button id="uploadRestoreButton" class="btn btn-primary" type="submit">Upload and Restore Backup</button>
+  </form>
+</section>
+<script>
+  (() => {
+    const form = document.getElementById('uploadRestoreForm');
+    if (!form) return;
+
+    const alertBox = document.getElementById('uploadRestoreAlert');
+    const fileInput = document.getElementById('backupUploadFile');
+    const confirmationInput = document.getElementById('backupUploadConfirmation');
+    const button = document.getElementById('uploadRestoreButton');
+
+    function showAlert(type, message) {
+      alertBox.className = `alert alert-${type}`;
+      alertBox.textContent = message;
+      alertBox.classList.remove('d-none');
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const file = fileInput.files[0];
+      const confirmation = confirmationInput.value.trim();
+      if (!file) {
+        showAlert('warning', 'Select a SQL backup file first.');
+        return;
+      }
+      if (confirmation !== 'RESET') {
+        showAlert('danger', 'Invalid confirmation code.');
+        return;
+      }
+      if (!window.confirm('Restore this uploaded backup now? Current database data will be replaced.')) return;
+
+      button.disabled = true;
+      showAlert('info', 'Uploading and restoring backup. Please wait...');
+
+      try {
+        const response = await fetch(`/reset/restore-upload?confirmation=${encodeURIComponent(confirmation)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': file.type || 'application/sql',
+            'X-Backup-Filename': file.name
+          },
+          body: file
+        });
+        const payload = await response.json();
+        if (!payload.ok) {
+          showAlert('danger', payload.message || 'Unable to restore uploaded backup.');
+          return;
+        }
+
+        showAlert('success', payload.message);
+        fileInput.value = '';
+        confirmationInput.value = '';
+      } catch (error) {
+        showAlert('danger', 'Unable to restore uploaded backup.');
+      } finally {
+        button.disabled = false;
+      }
+    });
+  })();
+</script>
+<%- include('../layouts/footer') %>

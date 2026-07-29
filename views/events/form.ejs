@@ -1,0 +1,33 @@
+<%- include('../layouts/header') %>
+<div class="page-heading">
+  <h1 class="h3"><%= title %></h1>
+  <a href="/events" class="btn btn-outline-secondary">Back</a>
+</div>
+<form action="<%= action %>" method="post" class="panel">
+  <div class="row g-3">
+    <div class="col-md-5"><label class="form-label">Event Name</label><input required name="event_name" class="form-control" value="<%= event.event_name || '' %>"></div>
+    <div class="col-md-3"><label class="form-label">Date</label><input required type="date" name="event_date" class="form-control" value="<%= event.event_date || '' %>"></div>
+    <div class="col-md-4"><label class="form-label">Venue</label><input required name="venue" class="form-control" value="<%= event.venue || '' %>"></div>
+    <div class="col-md-3"><label class="form-label">Give/Take Grams</label><input required type="number" name="give_take_grams" class="form-control" value="<%= event.give_take_grams %>"></div>
+    <div class="col-md-3"><label class="form-label">Status</label><select name="status" class="form-select"><% ['draft','open','closed','done','cancelled'].forEach((status) => { %><option value="<%= status %>" <%= event.status === status ? 'selected' : '' %>><%= status %></option><% }) %></select></div>
+  </div>
+  <hr>
+  <div class="row g-3">
+    <% [['cock','Cock'],['stag','Stag'],['bullstag','Bullstag']].forEach(([key,label]) => { %>
+      <div class="col-lg-4">
+        <div class="border rounded p-3 h-100">
+          <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" name="allow_<%= key %>" id="allow_<%= key %>" <%= event[`allow_${key}`] ? 'checked' : '' %>>
+            <label class="form-check-label fw-semibold" for="allow_<%= key %>"><%= label %></label>
+          </div>
+          <div class="row g-2">
+            <div class="col"><label class="form-label">Min</label><input type="number" name="<%= key %>_min_weight" class="form-control" value="<%= event[`${key}_min_weight`] %>"></div>
+            <div class="col"><label class="form-label">Max</label><input type="number" name="<%= key %>_max_weight" class="form-control" value="<%= event[`${key}_max_weight`] %>"></div>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+  <div class="mt-4"><button class="btn btn-dark">Save Event</button></div>
+</form>
+<%- include('../layouts/footer') %>

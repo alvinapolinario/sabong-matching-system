@@ -1,0 +1,76 @@
+<%- include('../layouts/header') %>
+<div class="page-heading">
+  <div>
+    <h1 class="h3 mb-1">Encode Gamecocks</h1>
+    <div class="text-muted"><%= entry.entry_name %> / <%= entry.owner_name %> / <%= entry.event_name %></div>
+  </div>
+  <a href="/entries" class="btn btn-outline-secondary">Back</a>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <% if (error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+    <form
+      action="/entries/<%= entry.entry_id %>/chickens"
+      method="post"
+      class="panel"
+      id="chickenEncodeForm"
+      data-cock-min="<%= entry.cock_min_weight %>"
+      data-cock-max="<%= entry.cock_max_weight %>"
+      data-cock-allowed="<%= entry.allow_cock ? '1' : '0' %>"
+      data-stag-min="<%= entry.stag_min_weight %>"
+      data-stag-max="<%= entry.stag_max_weight %>"
+      data-stag-allowed="<%= entry.allow_stag ? '1' : '0' %>"
+      data-bullstag-min="<%= entry.bullstag_min_weight %>"
+      data-bullstag-max="<%= entry.bullstag_max_weight %>"
+      data-bullstag-allowed="<%= entry.allow_bullstag ? '1' : '0' %>"
+    >
+      <h2 class="h5">Gamecock Details</h2>
+      <div class="weight-limits mb-3">
+        <div><strong>Cock:</strong> <%= entry.allow_cock ? `${entry.cock_min_weight}g - ${entry.cock_max_weight}g` : 'not allowed' %></div>
+        <div><strong>Stag:</strong> <%= entry.allow_stag ? `${entry.stag_min_weight}g - ${entry.stag_max_weight}g` : 'not allowed' %></div>
+        <div><strong>Bullstag:</strong> <%= entry.allow_bullstag ? `${entry.bullstag_min_weight}g - ${entry.bullstag_max_weight}g` : 'not allowed' %></div>
+      </div>
+      <div class="row g-3">
+        <div class="col-6"><label class="form-label">Entry No.</label><input required type="number" name="entry_no" class="form-control" value="<%= nextEntryNo %>"></div>
+        <div class="col-6"><label class="form-label">Type</label><select required name="type" id="chickenType" class="form-select"><option value="cock" <%= entry.allow_cock ? '' : 'disabled' %>>cock</option><option value="stag" <%= entry.allow_stag ? '' : 'disabled' %>>stag</option><option value="bullstag" <%= entry.allow_bullstag ? '' : 'disabled' %>>bullstag</option></select></div>
+        <div class="col-12">
+          <label class="form-label">Weight (grams)</label>
+          <input required type="number" name="weight" id="chickenWeight" class="form-control">
+          <div id="weightHelp" class="form-text"></div>
+        </div>
+        <div class="col-6"><label class="form-label">Wingband</label><input required name="wingband" class="form-control"></div>
+        <div class="col-6"><label class="form-label">Legband</label><input required name="legband" class="form-control"></div>
+      </div>
+      <button class="btn btn-dark mt-4">Add Gamecock</button>
+    </form>
+  </div>
+  <div class="col-lg-8">
+    <div class="panel table-responsive">
+      <table class="table align-middle">
+        <thead><tr><th>No.</th><th>Type</th><th>Weight</th><th>Wingband</th><th>Legband</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          <% chickens.forEach((chicken) => { %>
+            <tr>
+              <td><%= chicken.entry_no %></td>
+              <td><span class="badge text-bg-secondary"><%= chicken.type %></span></td>
+              <td><%= chicken.weight %>g</td>
+              <td><%= chicken.wingband %></td>
+              <td><%= chicken.legband %></td>
+              <td><span class="badge text-bg-light border"><%= chicken.status %></span></td>
+              <td class="text-end">
+                <% if (chicken.status === 'available') { %>
+                  <a href="/chickens/<%= chicken.chicken_id %>/edit?return_to=<%= encodeURIComponent(`/entries/${entry.entry_id}/encode`) %>" class="btn btn-sm btn-outline-secondary">Edit</a>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script src="/js/entry-encode.js"></script>
+<%- include('../layouts/footer') %>

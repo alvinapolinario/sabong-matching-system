@@ -1,0 +1,35 @@
+<%- include('../layouts/header') %>
+<div class="page-heading">
+  <h1 class="h3"><%= title %></h1>
+  <a href="/entries" class="btn btn-outline-secondary">Back</a>
+</div>
+<form action="<%= action %>" method="post" class="panel" style="max-width: 840px;">
+  <div class="row g-3">
+    <div class="col-md-5">
+      <label class="form-label">Event</label>
+      <select required name="event_id" class="form-select">
+        <% if (events.length !== 1) { %>
+          <option value="">Select event</option>
+        <% } %>
+        <% events.forEach((event) => { %>
+          <option value="<%= event.event_id %>" <%= String(entry.event_id) === String(event.event_id) ? 'selected' : '' %>><%= event.event_name %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Owner</label>
+      <select required name="owner_id" class="form-select">
+        <option value="">Select owner</option>
+        <% owners.forEach((owner) => { %>
+          <option value="<%= owner.owner_id %>"><%= owner.owner_name %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Entry Name</label>
+      <input required name="entry_name" class="form-control" value="<%= entry.entry_name %>">
+    </div>
+  </div>
+  <button class="btn btn-dark mt-4">Create Entry</button>
+</form>
+<%- include('../layouts/footer') %>

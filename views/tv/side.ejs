@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | <%= appName %></title>
+  <link href="/css/app.css" rel="stylesheet">
+</head>
+<body class="tv-body tv-<%= side %>-body">
+  <main class="tv-shell">
+    <% if (data && data.card) { %>
+      <article class="tv-score-card tv-<%= side %>">
+        <div class="tv-title">
+          <div class="tv-entry-name"><%= data.card.entry_name %></div>
+          <div class="tv-owner-name"><%= data.card.owner_name %></div>
+          <div class="tv-weight"><%= data.weight %><span class="tv-weight-unit">g</span></div>
+        </div>
+        <div class="tv-score-row">
+          <div class="tv-brackets"><%- data.card.score_breakdown %></div>
+          <div class="tv-total"><%= Number(data.card.result_count) > 0 ? Number(data.card.total_score).toFixed(1).replace('.0', '') : '' %></div>
+        </div>
+      </article>
+    <% } else { %>
+      <article class="tv-score-card">
+        <div class="tv-title">NO ACTIVE FIGHT</div>
+        <div class="tv-score-row">
+          <div class="tv-brackets"></div>
+          <div class="tv-total"></div>
+        </div>
+      </article>
+    <% } %>
+  </main>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    socket.on('tv:updated', () => window.location.reload());
+    socket.on('matches:updated', () => window.location.reload());
+  </script>
+</body>
+</html>

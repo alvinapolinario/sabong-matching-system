@@ -1,0 +1,32 @@
+{
+  "name": "cockpit-event-matching-system",
+  "version": "1.0.0",
+  "description": "Cockpit derby event entry encoding and drag-and-drop Gamecock matching system.",
+  "main": "app.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "keywords": [
+    "cockpit",
+    "matching",
+    "express",
+    "mysql",
+    "socket.io"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "ejs": "^5.0.2",
+    "express": "^5.2.1",
+    "express-session": "^1.18.2",
+    "method-override": "^3.0.0",
+    "mysql2": "^3.22.3",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

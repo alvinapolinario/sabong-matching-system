@@ -1,0 +1,12 @@
+USE matching_db;
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+TRUNCATE TABLE matches;
+TRUNCATE TABLE entry_data;
+TRUNCATE TABLE entries;
+TRUNCATE TABLE owner_no_fights;
+TRUNCATE TABLE owners;
+TRUNCATE TABLE events;
+
+SET FOREIGN_KEY_CHECKS = 1;

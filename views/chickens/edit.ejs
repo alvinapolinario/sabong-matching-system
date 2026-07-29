@@ -1,0 +1,74 @@
+<%- include('../layouts/header') %>
+<div class="page-heading">
+  <div>
+    <h1 class="h3 mb-1">Edit Gamecock</h1>
+    <div class="text-muted"><%= chicken.entry_name %> / <%= chicken.owner_name %> / <%= chicken.event_name %></div>
+  </div>
+  <a href="<%= returnTo %>" class="btn btn-outline-secondary">Back</a>
+</div>
+
+<% if (error) { %>
+  <div class="alert alert-danger" style="max-width: 760px;"><%= error %></div>
+<% } %>
+
+<% if (chicken.status !== 'available') { %>
+  <div class="alert alert-warning" style="max-width: 760px;">
+    This Gamecock is <strong><%= chicken.status %></strong>. Only unmatched available Gamecocks can be modified.
+  </div>
+<% } %>
+
+<form
+  action="/chickens/<%= chicken.chicken_id %>?_method=PUT"
+  method="post"
+  class="panel"
+  id="chickenEncodeForm"
+  style="max-width: 760px;"
+  data-cock-min="<%= chicken.cock_min_weight %>"
+  data-cock-max="<%= chicken.cock_max_weight %>"
+  data-cock-allowed="<%= chicken.allow_cock ? '1' : '0' %>"
+  data-stag-min="<%= chicken.stag_min_weight %>"
+  data-stag-max="<%= chicken.stag_max_weight %>"
+  data-stag-allowed="<%= chicken.allow_stag ? '1' : '0' %>"
+  data-bullstag-min="<%= chicken.bullstag_min_weight %>"
+  data-bullstag-max="<%= chicken.bullstag_max_weight %>"
+  data-bullstag-allowed="<%= chicken.allow_bullstag ? '1' : '0' %>"
+>
+  <input type="hidden" name="return_to" value="<%= returnTo %>">
+  <div class="weight-limits mb-3">
+    <div><strong>Cock:</strong> <%= chicken.allow_cock ? `${chicken.cock_min_weight}g - ${chicken.cock_max_weight}g` : 'not allowed' %></div>
+    <div><strong>Stag:</strong> <%= chicken.allow_stag ? `${chicken.stag_min_weight}g - ${chicken.stag_max_weight}g` : 'not allowed' %></div>
+    <div><strong>Bullstag:</strong> <%= chicken.allow_bullstag ? `${chicken.bullstag_min_weight}g - ${chicken.bullstag_max_weight}g` : 'not allowed' %></div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-3">
+      <label class="form-label">Entry No.</label>
+      <input required type="number" name="entry_no" class="form-control" value="<%= chicken.entry_no %>" <%= chicken.status !== 'available' ? 'disabled' : '' %>>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Type</label>
+      <select required name="type" id="chickenType" class="form-select" <%= chicken.status !== 'available' ? 'disabled' : '' %>>
+        <option value="cock" <%= chicken.type === 'cock' ? 'selected' : '' %> <%= chicken.allow_cock ? '' : 'disabled' %>>cock</option>
+        <option value="stag" <%= chicken.type === 'stag' ? 'selected' : '' %> <%= chicken.allow_stag ? '' : 'disabled' %>>stag</option>
+        <option value="bullstag" <%= chicken.type === 'bullstag' ? 'selected' : '' %> <%= chicken.allow_bullstag ? '' : 'disabled' %>>bullstag</option>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Weight (grams)</label>
+      <input required type="number" name="weight" id="chickenWeight" class="form-control" value="<%= chicken.weight %>" <%= chicken.status !== 'available' ? 'disabled' : '' %>>
+      <div id="weightHelp" class="form-text"></div>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Wingband</label>
+      <input required name="wingband" class="form-control" value="<%= chicken.wingband %>" <%= chicken.status !== 'available' ? 'disabled' : '' %>>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Legband</label>
+      <input required name="legband" class="form-control" value="<%= chicken.legband %>" <%= chicken.status !== 'available' ? 'disabled' : '' %>>
+    </div>
+  </div>
+
+  <button class="btn btn-dark mt-4" <%= chicken.status !== 'available' ? 'disabled' : '' %>>Save Changes</button>
+</form>
+<script src="/js/entry-encode.js"></script>
+<%- include('../layouts/footer') %>

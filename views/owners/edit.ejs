@@ -1,0 +1,8 @@
+<%- include('../layouts/header') %>
+<div class="page-heading"><h1 class="h3">Edit Owner</h1><a href="/owners" class="btn btn-outline-secondary">Back</a></div>
+<form action="/owners/<%= owner.owner_id %>?_method=PUT" method="post" class="panel" style="max-width: 620px;">
+  <label class="form-label">Owner Name</label>
+  <input required name="owner_name" class="form-control mb-3" value="<%= owner.owner_name %>">
+  <button class="btn btn-dark">Update Owner</button>
+</form>
+<%- include('../layouts/footer') %>

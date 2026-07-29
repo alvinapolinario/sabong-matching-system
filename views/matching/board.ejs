@@ -1,0 +1,105 @@
+<%- include('../layouts/header') %>
+<div class="matching-page">
+  <div class="page-heading text-white">
+    <div>
+      <h1 class="h3 mb-1">Drag-and-Drop Matching Board</h1>
+      <div class="text-white-50"><%= event ? `${event.event_name} / give-take ${event.give_take_grams}g` : 'Create an event to begin matching.' %></div>
+    </div>
+    <a href="/fights?event_id=<%= selectedEvent %>" class="btn btn-light">Fight Schedule</a>
+  </div>
+
+  <form class="matching-filters" method="get">
+    <select name="event_id" class="form-select">
+      <% events.forEach((item) => { %>
+        <option value="<%= item.event_id %>" <%= String(selectedEvent) === String(item.event_id) ? 'selected' : '' %>><%= item.event_name %></option>
+      <% }) %>
+    </select>
+    <input name="search" class="form-control" placeholder="Search owner, entry, bands" value="<%= filters.search || '' %>">
+    <select name="type" class="form-select">
+      <option value="">All types</option>
+      <% ['cock','stag','bullstag'].forEach((type) => { %>
+        <option value="<%= type %>" <%= filters.type === type ? 'selected' : '' %>><%= type %></option>
+      <% }) %>
+    </select>
+    <input type="number" name="min_weight" class="form-control" placeholder="Min g" value="<%= filters.min_weight || '' %>">
+    <input type="number" name="max_weight" class="form-control" placeholder="Max g" value="<%= filters.max_weight || '' %>">
+    <button class="btn btn-light">Filter</button>
+  </form>
+
+  <div id="matchAlert" class="alert d-none"></div>
+
+  <div class="matching-grid" data-event-id="<%= selectedEvent %>" data-give-take="<%= event ? event.give_take_grams : 0 %>">
+    <section class="board-panel">
+      <div class="board-panel-header">
+        <h2>Available Gamecocks</h2>
+        <span id="poolCount"><%= available.length %></span>
+      </div>
+      <div id="recommendationBar" class="recommendation-bar d-none">
+        <span id="recommendationText"></span>
+        <button id="showAllChickens" type="button" class="btn btn-sm btn-outline-light">Show All</button>
+      </div>
+      <div id="availableList" class="chicken-list pool-list">
+        <% available.forEach((chicken) => { %>
+          <div class="chicken-card" data-id="<%= chicken.chicken_id %>" data-weight="<%= chicken.weight %>" data-owner="<%= chicken.owner_id %>" data-type="<%= chicken.type %>">
+            <div class="d-flex justify-content-between gap-2">
+              <strong><%= chicken.owner_name %></strong>
+              <span><%= chicken.weight %>g</span>
+            </div>
+            <div class="small text-white-50"><%= chicken.entry_name %> #<%= chicken.entry_no %> / <%= chicken.type %></div>
+            <div class="band-line">WB <%= chicken.wingband %> / LB <%= chicken.legband %></div>
+            <button type="button" class="btn btn-sm btn-outline-light recommend-btn">Recommend</button>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+
+    <section class="board-panel center-panel">
+      <div class="drop-row">
+        <div>
+          <div class="side-title meron">LEFT SIDE</div>
+          <div id="meronZone" class="drop-zone"></div>
+        </div>
+        <div>
+          <div class="side-title wala">RIGHT SIDE</div>
+          <div id="walaZone" class="drop-zone"></div>
+        </div>
+      </div>
+      <div class="match-meter">
+        <span>Weight Difference</span>
+        <strong id="weightDiff">0g</strong>
+        <small>Limit: <%= event ? event.give_take_grams : 0 %>g</small>
+      </div>
+      <div class="d-flex gap-2">
+        <button id="confirmMatch" class="btn btn-success btn-lg flex-fill" type="button">Confirm Match</button>
+        <button id="autoMatch" class="btn btn-warning btn-lg flex-fill" type="button">Auto Match</button>
+        <button id="removeUnfought" class="btn btn-danger btn-lg flex-fill" type="button">Remove Unfought</button>
+        <button id="resetBoard" class="btn btn-outline-light btn-lg" type="button"><i class="bi bi-arrow-counterclockwise"></i></button>
+      </div>
+      <div class="small text-white-50 text-center">Auto Match keeps the same entry at least 5 fights apart.</div>
+    </section>
+
+    <section class="board-panel">
+      <div class="board-panel-header">
+        <h2>Confirmed Matches</h2>
+        <span id="matchCount"><%= matches.length %></span>
+      </div>
+      <div id="matchesList" class="match-list">
+        <% matches.forEach((match) => { %>
+          <article class="match-card" data-match-id="<%= match.match_id %>">
+            <div class="fight-no">Fight #<%= match.fight_no %></div>
+            <div><strong>LEFT SIDE:</strong> <%= match.meron_owner %> / <%= match.meron_weight %>g</div>
+            <div><strong>RIGHT SIDE:</strong> <%= match.wala_owner %> / <%= match.wala_weight %>g</div>
+            <div class="small text-white-50">Difference <%= match.weight_difference %>g / <%= match.status %></div>
+            <% if (match.status === 'pending' || match.status === 'confirmed') { %>
+              <button type="button" class="btn btn-sm btn-outline-warning w-100 mt-2 unmatch-btn">Change / Unmatch</button>
+            <% } %>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+  </div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="/js/matching.js"></script>
+<%- include('../layouts/footer') %>

@@ -1,0 +1,27 @@
+<%- include('../layouts/header') %>
+<div class="live-board" data-event-id="<%= selectedEvent %>">
+  <form class="live-toolbar" method="get">
+    <h1>Live Match Board</h1>
+    <select name="event_id" class="form-select">
+      <% events.forEach((event) => { %>
+        <option value="<%= event.event_id %>" <%= String(selectedEvent) === String(event.event_id) ? 'selected' : '' %>><%= event.event_name %></option>
+      <% }) %>
+    </select>
+    <button class="btn btn-light">Load</button>
+  </form>
+  <div id="liveMatches" class="live-match-grid">
+    <% matches.forEach((match) => { %>
+      <article class="live-card">
+        <div class="live-fight">Fight #<%= match.fight_no %></div>
+        <div class="live-sides">
+          <div><span>MERON</span><strong><%= match.meron_owner %></strong><em><%= match.meron_weight %>g</em></div>
+          <div><span>WALA</span><strong><%= match.wala_owner %></strong><em><%= match.wala_weight %>g</em></div>
+        </div>
+        <div class="live-meta">Difference <%= match.weight_difference %>g / <%= match.status %></div>
+      </article>
+    <% }) %>
+  </div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/live.js"></script>
+<%- include('../layouts/footer') %>

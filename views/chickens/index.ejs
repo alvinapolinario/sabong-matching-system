@@ -1,0 +1,57 @@
+<%- include('../layouts/header') %>
+<div class="page-heading"><h1 class="h3">Gamecock Management</h1></div>
+<form class="panel mb-3" method="get">
+  <div class="row g-3 align-items-end">
+    <div class="col-md-3"><label class="form-label">Event</label><select name="event_id" class="form-select"><option value="">All</option><% events.forEach((event) => { %><option value="<%= event.event_id %>" <%= String(filters.event_id || '') === String(event.event_id) ? 'selected' : '' %>><%= event.event_name %></option><% }) %></select></div>
+    <div class="col-md-2"><label class="form-label">Status</label><select name="status" class="form-select"><option value="">All</option><% ['available','matched','fought','cancelled'].forEach((status) => { %><option value="<%= status %>" <%= filters.status === status ? 'selected' : '' %>><%= status %></option><% }) %></select></div>
+    <div class="col-md-2"><label class="form-label">Type</label><select name="type" class="form-select"><option value="">All</option><option value="cock">cock</option><option value="stag">stag</option><option value="bullstag">bullstag</option></select></div>
+    <div class="col-md-3"><label class="form-label">Search</label><input name="search" class="form-control" value="<%= filters.search || '' %>"></div>
+    <div class="col-md-2"><button class="btn btn-outline-dark w-100">Filter</button></div>
+  </div>
+</form>
+<div class="panel table-responsive">
+  <table class="table align-middle">
+    <thead><tr><th>Owner</th><th>Entry</th><th>Entry #</th><th>Type</th><th>Weight</th><th>Wingband</th><th>Legband</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      <%
+        const ownerCounts = chickens.reduce((counts, chicken) => {
+          counts[chicken.owner_id] = (counts[chicken.owner_id] || 0) + 1;
+          return counts;
+        }, {});
+        const entryCounts = chickens.reduce((counts, chicken) => {
+          counts[chicken.entry_id] = (counts[chicken.entry_id] || 0) + 1;
+          return counts;
+        }, {});
+        const renderedOwners = new Set();
+        const renderedEntries = new Set();
+      %>
+      <% chickens.forEach((chicken) => { %>
+        <tr>
+          <% if (!renderedOwners.has(chicken.owner_id)) { %>
+            <% renderedOwners.add(chicken.owner_id); %>
+            <td rowspan="<%= ownerCounts[chicken.owner_id] %>" class="owner-group-cell fw-semibold"><%= chicken.owner_name %></td>
+          <% } %>
+          <% if (!renderedEntries.has(chicken.entry_id)) { %>
+            <% renderedEntries.add(chicken.entry_id); %>
+            <td rowspan="<%= entryCounts[chicken.entry_id] %>" class="entry-group-cell fw-semibold"><%= chicken.entry_name %></td>
+          <% } %>
+          <td><%= chicken.entry_no %></td>
+          <td><%= chicken.type %></td>
+          <td><%= chicken.weight %>g</td>
+          <td><%= chicken.wingband %></td>
+          <td><%= chicken.legband %></td>
+          <td>
+            <% const statusClass = chicken.status === 'available' ? 'text-bg-success' : chicken.status === 'matched' ? 'text-bg-primary' : chicken.status === 'fought' ? 'text-bg-dark' : 'text-bg-secondary'; %>
+            <span class="badge <%= statusClass %>"><%= chicken.status %></span>
+          </td>
+          <td class="text-end">
+            <% if (chicken.status === 'available') { %>
+              <a href="/chickens/<%= chicken.chicken_id %>/edit?return_to=<%= encodeURIComponent('/chickens') %>" class="btn btn-sm btn-outline-secondary">Edit</a>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<%- include('../layouts/footer') %>

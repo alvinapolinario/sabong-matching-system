@@ -1,0 +1,37 @@
+<%- include('../layouts/header') %>
+<div class="page-heading">
+  <h1 class="h3">Entry Encoding Module</h1>
+  <a href="/entries/new" class="btn btn-dark"><i class="bi bi-plus-lg"></i> New Entry</a>
+</div>
+<form class="panel mb-3" method="get">
+  <div class="row g-3 align-items-end">
+    <div class="col-md-5">
+      <label class="form-label">Filter Event</label>
+      <select name="event_id" class="form-select">
+        <option value="">All events</option>
+        <% events.forEach((event) => { %>
+          <option value="<%= event.event_id %>" <%= String(selectedEvent) === String(event.event_id) ? 'selected' : '' %>><%= event.event_name %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-2"><button class="btn btn-outline-dark w-100">Apply</button></div>
+  </div>
+</form>
+<div class="panel table-responsive">
+  <table class="table align-middle">
+    <thead><tr><th>Entry</th><th>Owner</th><th>Event</th><th>Gamecocks</th><th>Created</th><th></th></tr></thead>
+    <tbody>
+      <% entries.forEach((entry) => { %>
+        <tr>
+          <td class="fw-semibold"><%= entry.entry_name %></td>
+          <td><%= entry.owner_name %></td>
+          <td><%= entry.event_name %></td>
+          <td><%= entry.chicken_count %></td>
+          <td><%= entry.created_at %></td>
+          <td class="text-end"><a href="/entries/<%= entry.entry_id %>/encode" class="btn btn-sm btn-outline-dark">Encode Gamecocks</a></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<%- include('../layouts/footer') %>

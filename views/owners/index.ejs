@@ -1,0 +1,85 @@
+<%- include('../layouts/header') %>
+<div class="page-heading"><h1 class="h3">Owner Management</h1></div>
+<% if (error) { %>
+  <div class="alert alert-danger"><%= error %></div>
+<% } %>
+<div class="row g-4">
+  <div class="col-lg-4">
+    <form action="/owners" method="post" class="panel">
+      <h2 class="h5">Register Owner</h2>
+      <label class="form-label">Owner Name</label>
+      <input required name="owner_name" class="form-control mb-3">
+      <button class="btn btn-dark">Save Owner</button>
+    </form>
+    <form action="/owners/no-fights" method="post" class="panel mt-4">
+      <h2 class="h5">No Fight With</h2>
+      <div class="mb-3">
+        <label class="form-label">Owner</label>
+        <select required name="owner_a_id" class="form-select">
+          <option value="">Select owner</option>
+          <% owners.forEach((owner) => { %>
+            <option value="<%= owner.owner_id %>"><%= owner.owner_name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Cannot fight with</label>
+        <select required name="owner_b_id" class="form-select">
+          <option value="">Select owner</option>
+          <% owners.forEach((owner) => { %>
+            <option value="<%= owner.owner_id %>"><%= owner.owner_name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <button class="btn btn-outline-danger">Add Restriction</button>
+    </form>
+  </div>
+  <div class="col-lg-8">
+    <div class="panel table-responsive">
+      <table class="table align-middle">
+        <thead><tr><th>ID</th><th>Owner</th><th></th></tr></thead>
+        <tbody>
+          <% owners.forEach((owner) => { %>
+            <tr>
+              <td><%= owner.owner_id %></td>
+              <td class="fw-semibold"><%= owner.owner_name %></td>
+              <td class="text-end">
+                <div class="d-inline-flex gap-2">
+                  <a class="btn btn-sm btn-outline-secondary" href="/owners/<%= owner.owner_id %>/edit">Edit</a>
+                  <form method="post" action="/owners/<%= owner.owner_id %>?_method=DELETE" onsubmit="return confirm('Delete this owner? This is only allowed when the owner has no entries.');">
+                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel table-responsive mt-4">
+      <div class="panel-header">
+        <h2 class="h5 mb-0">No Fight Restrictions</h2>
+      </div>
+      <table class="table align-middle">
+        <thead><tr><th>Owner</th><th>Cannot Fight With</th><th></th></tr></thead>
+        <tbody>
+          <% noFightPairs.forEach((pair) => { %>
+            <tr>
+              <td class="fw-semibold"><%= pair.owner_a_name %></td>
+              <td><%= pair.owner_b_name %></td>
+              <td class="text-end">
+                <form method="post" action="/owners/no-fights/<%= pair.no_fight_id %>?_method=DELETE">
+                  <button class="btn btn-sm btn-outline-danger">Remove</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+          <% if (!noFightPairs.length) { %>
+            <tr><td colspan="3" class="text-muted text-center">No restrictions yet.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<%- include('../layouts/footer') %>
