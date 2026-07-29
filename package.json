@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "node app.js",
-    "dev": "NODE_ENV=development nodemon app.js"
+    "dev": "NODE_ENV=development nodemon app.js",
+    "test": "node --test tests/**/*.test.js"
   },
   "keywords": [
     "sabong",

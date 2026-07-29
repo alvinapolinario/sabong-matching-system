@@ -98,6 +98,7 @@ For local development, either keep `NODE_ENV=development` (allows default fallba
 ```bash
 npm start          # production mode (validates required env vars)
 npm run dev        # development mode with nodemon
+npm test           # run matching unit tests
 ```
 
 Open [http://localhost:3000](http://localhost:3000) and log in with the 6-digit PIN.

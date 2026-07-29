@@ -49,18 +49,18 @@ Phased roadmap for the Sabong Matching System. Each phase has a clear goal, scop
 
 | # | Task | Status |
 |---|------|--------|
-| 2.1 | Add test runner (e.g. Node built-in test or Vitest) + npm script | `[ ]` |
-| 2.2 | Extract pure matching helpers to a testable module (if needed) | `[ ]` |
-| 2.3 | Unit tests: `validateChicken`, `recommendedOpponents`, `noFightKey` | `[ ]` |
-| 2.4 | Unit tests: `findAutoPairs`, `pairPriority`, entry-gap behavior | `[ ]` |
-| 2.5 | Auto-match: support **partial matching** (match what you can, report skips) | `[ ]` |
-| 2.6 | After confirm, fetch single match by ID instead of reloading all matches | `[ ]` |
-| 2.7 | Document entry-gap rule (auto only) in matching board UI | `[ ]` |
+| 2.1 | Add test runner (e.g. Node built-in test or Vitest) + npm script | `[x]` |
+| 2.2 | Extract pure matching helpers to a testable module (if needed) | `[x]` |
+| 2.3 | Unit tests: `validateChicken`, `recommendedOpponents`, `noFightKey` | `[x]` |
+| 2.4 | Unit tests: `findAutoPairs`, `pairPriority`, entry-gap behavior | `[x]` |
+| 2.5 | Auto-match: support **partial matching** (match what you can, report skips) | `[x]` |
+| 2.6 | After confirm, fetch single match by ID instead of reloading all matches | `[x]` |
+| 2.7 | Document entry-gap rule (auto only) in matching board UI | `[x]` |
 
 **Exit criteria**
-- [ ] Core matching helpers have passing unit tests
-- [ ] Auto-match no longer fails entirely when only some pairs are possible
-- [ ] Matching behavior is documented in code comments + UI where operators need it
+- [x] Core matching helpers have passing unit tests
+- [x] Auto-match no longer fails entirely when only some pairs are possible
+- [x] Matching behavior is documented in code comments + UI where operators need it
 
 **Estimated effort:** 2–3 sessions
 
@@ -194,8 +194,8 @@ Phased roadmap for the Sabong Matching System. Each phase has a clear goal, scop
 
 ## Current phase
 
-> **Phase 2 — Matching Correctness & Tests**  
-> Next task: **2.1** Add test runner + npm script
+> **Phase 3 — Operator UX (Matching Board)**  
+> Next task: **3.1** Expose no-fight pairs to matching board
 
 ---
 
@@ -213,6 +213,7 @@ Record choices made during implementation so later phases stay consistent.
 
 | Date | Phase | Notes |
 |------|-------|-------|
+| 2026-07-29 | Phase 2 | Matching service extraction, unit tests, partial auto-match |
 | 2026-07-29 | Phase 1 | Central config module, production validation, Sabong branding |
 | 2026-07-29 | — | Docker Compose stack added; db.js uses env vars |
 | 2026-07-29 | — | Initial work plan created |

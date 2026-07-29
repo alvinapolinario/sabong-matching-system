@@ -202,7 +202,8 @@
         showAlert('warning', payload.message || 'No valid auto matches found.');
         return;
       }
-      showAlert('success', payload.message);
+      const alertType = payload.unmatched_count > 0 ? 'info' : 'success';
+      showAlert(alertType, payload.message);
       await refreshBoard();
     } catch (error) {
       showAlert('danger', 'Unable to auto match.');

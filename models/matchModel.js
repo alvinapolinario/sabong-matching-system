@@ -1,5 +1,29 @@
 const db = require('../db');
 
+const matchSelect = `
+  SELECT
+    m.*,
+    ev.event_name,
+    mc.type AS meron_type,
+    mc.wingband AS meron_wingband,
+    mc.legband AS meron_legband,
+    me.entry_name AS meron_entry,
+    mo.owner_name AS meron_owner,
+    wc.type AS wala_type,
+    wc.wingband AS wala_wingband,
+    wc.legband AS wala_legband,
+    we.entry_name AS wala_entry,
+    wo.owner_name AS wala_owner
+  FROM matches m
+  JOIN events ev ON ev.event_id = m.event_id
+  JOIN entry_data mc ON mc.chicken_id = m.meron_chicken_id
+  JOIN entries me ON me.entry_id = mc.entry_id
+  JOIN owners mo ON mo.owner_id = me.owner_id
+  JOIN entry_data wc ON wc.chicken_id = m.wala_chicken_id
+  JOIN entries we ON we.entry_id = wc.entry_id
+  JOIN owners wo ON wo.owner_id = we.owner_id
+`;
+
 async function all(eventId) {
   const params = [];
   let where = '';
@@ -9,32 +33,21 @@ async function all(eventId) {
   }
 
   const [rows] = await db.execute(
-    `SELECT
-       m.*,
-       ev.event_name,
-       mc.type AS meron_type,
-       mc.wingband AS meron_wingband,
-       mc.legband AS meron_legband,
-       me.entry_name AS meron_entry,
-       mo.owner_name AS meron_owner,
-       wc.type AS wala_type,
-       wc.wingband AS wala_wingband,
-       wc.legband AS wala_legband,
-       we.entry_name AS wala_entry,
-       wo.owner_name AS wala_owner
-     FROM matches m
-     JOIN events ev ON ev.event_id = m.event_id
-     JOIN entry_data mc ON mc.chicken_id = m.meron_chicken_id
-     JOIN entries me ON me.entry_id = mc.entry_id
-     JOIN owners mo ON mo.owner_id = me.owner_id
-     JOIN entry_data wc ON wc.chicken_id = m.wala_chicken_id
-     JOIN entries we ON we.entry_id = wc.entry_id
-     JOIN owners wo ON wo.owner_id = we.owner_id
+    `${matchSelect}
      ${where}
      ORDER BY m.event_id DESC, m.fight_no ASC`,
     params
   );
   return rows;
+}
+
+async function findById(matchId) {
+  const [rows] = await db.execute(
+    `${matchSelect}
+     WHERE m.match_id = ?`,
+    [matchId]
+  );
+  return rows[0];
 }
 
 async function nextFightNo(eventId, connection = db) {
@@ -499,6 +512,7 @@ async function dashboardStats() {
 
 module.exports = {
   all,
+  findById,
   nextFightNo,
   create,
   updateStatus,

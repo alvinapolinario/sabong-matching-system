@@ -75,7 +75,10 @@
         <button id="removeUnfought" class="btn btn-danger btn-lg flex-fill" type="button">Remove Unfought</button>
         <button id="resetBoard" class="btn btn-outline-light btn-lg" type="button"><i class="bi bi-arrow-counterclockwise"></i></button>
       </div>
-      <div class="small text-white-50 text-center">Auto Match keeps the same entry at least 5 fights apart.</div>
+      <div class="small text-white-50 text-center auto-match-rules">
+        <strong>Auto Match only:</strong> entries from the last <%= autoMatchEntryGap %> fights are skipped so the same entry does not appear again too soon.
+        Manual confirm does not apply this spacing rule.
+      </div>
     </section>
 
     <section class="board-panel">
