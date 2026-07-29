@@ -6,6 +6,11 @@ const Match = require('../models/matchModel');
 const Owner = require('../models/ownerModel');
 const OverrideLog = require('../models/overrideLogModel');
 const Matching = require('../services/matchingService');
+const {
+  emitPoolUpdated,
+  emitMatchCreated,
+  emitMatchDeleted
+} = require('../socket/events');
 
 const {
   AUTO_MATCH_ENTRY_GAP,
@@ -176,8 +181,8 @@ async function autoMatch(req, res, next) {
     await Chicken.updateStatus(matchedIds, 'matched', connection);
     await connection.commit();
 
-    req.io.to(`event:${eventId}`).emit('match:created', { event_id: eventId });
-    req.io.emit('pool:updated', { event_id: eventId });
+    emitMatchCreated(req.io, eventId);
+    emitPoolUpdated(req.io, eventId);
 
     res.json({
       ok: true,
@@ -365,8 +370,8 @@ async function confirm(req, res, next) {
     await connection.commit();
 
     const match = await Match.findById(matchId);
-    req.io.to(`event:${eventId}`).emit('match:created', { event_id: eventId, match });
-    req.io.emit('pool:updated', { event_id: eventId });
+    emitMatchCreated(req.io, eventId, { match });
+    emitPoolUpdated(req.io, eventId);
 
     res.json({ ok: true, message: `Fight #${fightNo} confirmed.`, match });
   } catch (error) {
@@ -380,8 +385,7 @@ async function confirm(req, res, next) {
 async function destroy(req, res, next) {
   try {
     const match = await Match.deleteAndRelease(req.params.id);
-    req.io.to(`event:${match.event_id}`).emit('match:deleted', { event_id: match.event_id });
-    req.io.emit('pool:updated', { event_id: match.event_id });
+    emitMatchDeleted(req.io, match.event_id);
     res.json({ ok: true, message: 'Match removed. Gamecocks are available again.' });
   } catch (error) {
     res.status(error.status || 500).json({
@@ -399,8 +403,7 @@ async function destroyUnfought(req, res, next) {
     }
 
     const result = await Match.deleteUnfoughtAndRelease(eventId);
-    req.io.to(`event:${eventId}`).emit('match:deleted', { event_id: eventId });
-    req.io.emit('pool:updated', { event_id: eventId });
+    emitMatchDeleted(req.io, eventId);
 
     res.json({
       ok: true,

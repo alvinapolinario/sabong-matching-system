@@ -189,6 +189,29 @@ Auto-match and manual confirm enforce these constraints:
 
 See `controllers/matchingController.js` for the full algorithm.
 
+## Socket.IO events
+
+Clients join an event room with `socket.emit('event:join', eventId)`.
+
+| Event | Payload | When emitted |
+|-------|---------|--------------|
+| `pool:updated` | `{ event_id }` | Matching pool changes |
+| `match:created` | `{ event_id, match? }` | New fight confirmed |
+| `match:deleted` | `{ event_id }` | Match removed |
+| `fights:updated` | `{ event_id }` | Reorder, result, status, TV changes |
+| `matches:updated` | `{ event_id }` | Alias of `fights:updated` |
+| `tv:updated` | `{ event_id }` | Active TV fight or side changed |
+
+Pages that auto-refresh: Matching Board, Fights, Live Board, TV displays.
+
+### Multi-operator smoke test
+
+1. Open **Matching**, **Fights**, and **Live Board** for the same event in separate browser tabs.
+2. Confirm a manual match on Matching — Fights and Live should update within ~1s.
+3. Reorder fights on Fights — other tabs should refresh.
+4. Record a fight result — Live and Matching reflect the update.
+5. Set an active TV fight — `/tv/meron` and `/tv/wala` reload when scoped to that event.
+
 ## License
 
 ISC

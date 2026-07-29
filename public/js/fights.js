@@ -6,6 +6,34 @@
   if (!reportBody || !reportWrap || !window.Sortable) return;
 
   const eventId = reportWrap.dataset.eventId;
+  let ignoreSocketRefreshUntil = 0;
+  let refreshTimer = null;
+
+  const socket = window.io?.();
+  if (socket && eventId) {
+    socket.emit('event:join', eventId);
+
+    function isCurrentEvent(payload) {
+      if (!payload?.event_id) return true;
+      return String(payload.event_id) === String(eventId);
+    }
+
+    function scheduleSocketRefresh() {
+      if (Date.now() < ignoreSocketRefreshUntil) return;
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => window.location.reload(), 400);
+    }
+
+    ['fights:updated', 'matches:updated', 'match:created', 'match:deleted', 'pool:updated', 'tv:updated'].forEach((eventName) => {
+      socket.on(eventName, (payload) => {
+        if (isCurrentEvent(payload)) scheduleSocketRefresh();
+      });
+    });
+  }
+
+  function markLocalUpdate() {
+    ignoreSocketRefreshUntil = Date.now() + 1500;
+  }
 
   function showAlert(type, message) {
     alertBox.className = `alert alert-${type} no-print`;
@@ -106,6 +134,7 @@
         showAlert('danger', payload.message || 'Unable to save fight order.');
         return;
       }
+      markLocalUpdate();
       showAlert('success', `${payload.message} You can print now.`);
     } catch (error) {
       showAlert('danger', 'Unable to save fight order.');
@@ -142,6 +171,7 @@
       input.disabled = true;
       try {
         await submitForm(form);
+        markLocalUpdate();
         if (form.classList.contains('tv-active-form')) {
           markActiveRadio(input);
           showTvControls(form.closest('tr'));

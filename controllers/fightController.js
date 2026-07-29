@@ -1,5 +1,10 @@
 const Event = require('../models/eventModel');
 const Match = require('../models/matchModel');
+const {
+  emitFightsUpdated,
+  emitTvUpdated,
+  emitPoolUpdated
+} = require('../socket/events');
 
 async function index(req, res, next) {
   try {
@@ -14,10 +19,31 @@ async function index(req, res, next) {
   }
 }
 
+async function apiSchedule(req, res, next) {
+  try {
+    const eventId = req.query.event_id;
+    if (!eventId) {
+      return res.status(422).json({ ok: false, message: 'Select an event first.' });
+    }
+
+    const [matches, scores] = await Promise.all([
+      Match.all(eventId),
+      Match.scoreSummary(eventId)
+    ]);
+
+    res.json({ ok: true, matches, scores });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function updateStatus(req, res, next) {
   try {
-    await Match.updateStatus(req.params.id, req.body.status);
-    req.io.emit('matches:updated');
+    const match = await Match.updateStatus(req.params.id, req.body.status);
+    emitFightsUpdated(req.io, match.event_id);
+    if (req.accepts('json') && !req.accepts('html')) {
+      return res.json({ ok: true, message: 'Fight status updated.' });
+    }
     res.redirect(req.get('referer') || '/fights');
   } catch (error) {
     next(error);
@@ -34,7 +60,7 @@ async function reorder(req, res, next) {
     }
 
     await Match.reorder(eventId, matchIds);
-    req.io.to(`event:${eventId}`).emit('matches:updated', { event_id: eventId });
+    emitFightsUpdated(req.io, eventId);
     res.json({ ok: true, message: 'Fight order saved.' });
   } catch (error) {
     res.status(error.status || 500).json({
@@ -46,8 +72,13 @@ async function reorder(req, res, next) {
 
 async function updateResult(req, res, next) {
   try {
-    await Match.updateResult(req.params.id, req.body.result);
-    req.io.emit('matches:updated');
+    const match = await Match.updateResult(req.params.id, req.body.result);
+    emitFightsUpdated(req.io, match.event_id);
+    emitPoolUpdated(req.io, match.event_id);
+    emitTvUpdated(req.io, match.event_id);
+    if (req.accepts('json') && !req.accepts('html')) {
+      return res.json({ ok: true, message: 'Fight result updated.' });
+    }
     res.redirect(req.get('referer') || '/fights');
   } catch (error) {
     next(error);
@@ -57,7 +88,8 @@ async function updateResult(req, res, next) {
 async function setActive(req, res, next) {
   try {
     const match = await Match.setActiveFight(req.params.id);
-    req.io.emit('tv:updated', { event_id: match.event_id });
+    emitTvUpdated(req.io, match.event_id);
+    emitFightsUpdated(req.io, match.event_id);
     if (req.accepts('json') && !req.accepts('html')) {
       return res.json({ ok: true, message: 'Active TV fight updated.' });
     }
@@ -70,7 +102,8 @@ async function setActive(req, res, next) {
 async function setTvMeron(req, res, next) {
   try {
     const match = await Match.setTvMeron(req.params.id, req.body.chicken_id);
-    req.io.emit('tv:updated', { event_id: match.event_id });
+    emitTvUpdated(req.io, match.event_id);
+    emitFightsUpdated(req.io, match.event_id);
     if (req.accepts('json') && !req.accepts('html')) {
       return res.json({ ok: true, message: 'TV side updated.' });
     }
@@ -80,4 +113,4 @@ async function setTvMeron(req, res, next) {
   }
 }
 
-module.exports = { index, updateStatus, updateResult, setActive, setTvMeron, reorder };
+module.exports = { index, apiSchedule, updateStatus, updateResult, setActive, setTvMeron, reorder };

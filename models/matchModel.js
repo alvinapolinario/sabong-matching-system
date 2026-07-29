@@ -79,7 +79,16 @@ async function create(data, connection = db) {
 }
 
 async function updateStatus(matchId, status) {
+  const [rows] = await db.execute('SELECT event_id FROM matches WHERE match_id = ?', [matchId]);
+  const match = rows[0];
+  if (!match) {
+    const error = new Error('Match not found.');
+    error.status = 404;
+    throw error;
+  }
+
   await db.execute('UPDATE matches SET status = ? WHERE match_id = ?', [status, matchId]);
+  return match;
 }
 
 async function setActiveFight(matchId) {
@@ -158,7 +167,7 @@ async function updateResult(matchId, result) {
   try {
     await connection.beginTransaction();
     const [rows] = await connection.execute(
-      'SELECT meron_chicken_id, wala_chicken_id FROM matches WHERE match_id = ? FOR UPDATE',
+      'SELECT event_id, meron_chicken_id, wala_chicken_id FROM matches WHERE match_id = ? FOR UPDATE',
       [matchId]
     );
     const match = rows[0];
@@ -182,6 +191,7 @@ async function updateResult(matchId, result) {
     );
 
     await connection.commit();
+    return match;
   } catch (error) {
     await connection.rollback();
     throw error;

@@ -8,7 +8,8 @@ async function side(req, res, next, forcedSide) {
     res.render('tv/side', {
       title: `TV ${sideName.toUpperCase()}`,
       side: sideName,
-      data
+      data,
+      eventId: req.query.event_id || data?.match?.event_id || ''
     });
   } catch (error) {
     next(error);

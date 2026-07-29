@@ -2,6 +2,7 @@ const router = require('express').Router();
 const controller = require('../controllers/fightController');
 
 router.get('/', controller.index);
+router.get('/api/schedule', controller.apiSchedule);
 router.post('/reorder', controller.reorder);
 router.put('/:id/active', controller.setActive);
 router.put('/:id/tv-meron', controller.setTvMeron);

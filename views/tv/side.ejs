@@ -6,7 +6,7 @@
   <title><%= title %> | <%= appName %></title>
   <link href="/css/app.css" rel="stylesheet">
 </head>
-<body class="tv-body tv-<%= side %>-body">
+<body class="tv-body tv-<%= side %>-body" data-event-id="<%= eventId %>">
   <main class="tv-shell">
     <% if (data && data.card) { %>
       <article class="tv-score-card tv-<%= side %>">
@@ -32,9 +32,21 @@
   </main>
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    const tvEventId = document.body.dataset.eventId || '';
     const socket = io();
-    socket.on('tv:updated', () => window.location.reload());
-    socket.on('matches:updated', () => window.location.reload());
+    if (tvEventId) socket.emit('event:join', tvEventId);
+
+    function shouldRefresh(payload) {
+      if (!tvEventId || !payload?.event_id) return true;
+      return String(payload.event_id) === String(tvEventId);
+    }
+
+    socket.on('tv:updated', (payload) => {
+      if (shouldRefresh(payload)) window.location.reload();
+    });
+    socket.on('fights:updated', (payload) => {
+      if (shouldRefresh(payload)) window.location.reload();
+    });
   </script>
 </body>
 </html>

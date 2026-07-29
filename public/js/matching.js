@@ -28,9 +28,26 @@
   let pendingConfirm = null;
 
   socket.emit('event:join', eventId);
-  socket.on('pool:updated', refreshBoard);
-  socket.on('match:created', refreshBoard);
-  socket.on('match:deleted', refreshBoard);
+  socket.on('pool:updated', (payload) => {
+    if (payload?.event_id && String(payload.event_id) !== String(eventId)) return;
+    refreshBoard();
+  });
+  socket.on('match:created', (payload) => {
+    if (payload?.event_id && String(payload.event_id) !== String(eventId)) return;
+    refreshBoard();
+  });
+  socket.on('match:deleted', (payload) => {
+    if (payload?.event_id && String(payload.event_id) !== String(eventId)) return;
+    refreshBoard();
+  });
+  socket.on('fights:updated', (payload) => {
+    if (payload?.event_id && String(payload.event_id) !== String(eventId)) return;
+    refreshBoard();
+  });
+  socket.on('matches:updated', (payload) => {
+    if (payload?.event_id && String(payload.event_id) !== String(eventId)) return;
+    refreshBoard();
+  });
 
   function noFightKey(ownerA, ownerB) {
     const first = Number(ownerA);

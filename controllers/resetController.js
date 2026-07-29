@@ -1,5 +1,10 @@
 const db = require('../db');
 const Backup = require('../services/backupService');
+const {
+  emitPoolUpdated,
+  emitFightsUpdated,
+  emitTvUpdated
+} = require('../socket/events');
 
 const RESET_CODE = 'RESET';
 
@@ -26,6 +31,7 @@ async function clearData(req, res, next) {
 
     await db.execute('SET FOREIGN_KEY_CHECKS = 0');
     await db.execute('TRUNCATE TABLE matches');
+    await db.execute('TRUNCATE TABLE override_logs');
     await db.execute('TRUNCATE TABLE entry_data');
     await db.execute('TRUNCATE TABLE entries');
     await db.execute('TRUNCATE TABLE owner_no_fights');
@@ -33,9 +39,9 @@ async function clearData(req, res, next) {
     await db.execute('TRUNCATE TABLE events');
     await db.execute('SET FOREIGN_KEY_CHECKS = 1');
 
-    req.io.emit('pool:updated');
-    req.io.emit('matches:updated');
-    req.io.emit('tv:updated');
+    emitPoolUpdated(req.io);
+    emitFightsUpdated(req.io);
+    emitTvUpdated(req.io);
 
     res.redirect(`/reset?success=${encodeURIComponent(`Backup ${backup.filename} created. All production data has been cleared.`)}`);
   } catch (error) {
@@ -63,9 +69,9 @@ async function restoreData(req, res, next) {
     await Backup.createBackup('before-restore');
     await Backup.restoreBackup(filename);
 
-    req.io.emit('pool:updated');
-    req.io.emit('matches:updated');
-    req.io.emit('tv:updated');
+    emitPoolUpdated(req.io);
+    emitFightsUpdated(req.io);
+    emitTvUpdated(req.io);
 
     res.redirect(`/reset?success=${encodeURIComponent(`Backup ${filename} restored successfully.`)}`);
   } catch (error) {
@@ -86,9 +92,9 @@ async function uploadRestoreData(req, res, next) {
     await Backup.createBackup('before-upload-restore');
     await Backup.restoreBackup(uploaded.filename);
 
-    req.io.emit('pool:updated');
-    req.io.emit('matches:updated');
-    req.io.emit('tv:updated');
+    emitPoolUpdated(req.io);
+    emitFightsUpdated(req.io);
+    emitTvUpdated(req.io);
 
     res.json({
       ok: true,

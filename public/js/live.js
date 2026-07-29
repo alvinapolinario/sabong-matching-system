@@ -5,16 +5,38 @@
   const eventId = board.dataset.eventId;
   const socket = window.io();
   socket.emit('event:join', eventId);
-  socket.on('match:created', loadMatches);
-  socket.on('matches:updated', loadMatches);
+
+  function isCurrentEvent(payload) {
+    if (!payload?.event_id) return true;
+    return String(payload.event_id) === String(eventId);
+  }
+
+  socket.on('match:created', (payload) => {
+    if (isCurrentEvent(payload)) loadMatches();
+  });
+  socket.on('match:deleted', (payload) => {
+    if (isCurrentEvent(payload)) loadMatches();
+  });
+  socket.on('fights:updated', (payload) => {
+    if (isCurrentEvent(payload)) loadMatches();
+  });
+  socket.on('matches:updated', (payload) => {
+    if (isCurrentEvent(payload)) loadMatches();
+  });
+  socket.on('pool:updated', (payload) => {
+    if (isCurrentEvent(payload)) loadMatches();
+  });
 
   async function loadMatches() {
     const response = await fetch(`/matching/api/matches?event_id=${encodeURIComponent(eventId)}`);
     const payload = await response.json();
-    document.getElementById('liveMatches').innerHTML = payload.matches.map(renderMatch).join('');
+    document.getElementById('liveMatches').innerHTML = payload.matches.length
+      ? payload.matches.map(renderMatch).join('')
+      : '<div class="text-white-50">No fights matched yet.</div>';
   }
 
   function renderMatch(match) {
+    const resultLabel = match.result && match.result !== 'pending' ? ` / ${match.result}` : '';
     return `
       <article class="live-card">
         <div class="live-fight">Fight #${match.fight_no}</div>
@@ -22,7 +44,7 @@
           <div><span>MERON</span><strong>${escapeHtml(match.meron_owner)}</strong><em>${match.meron_weight}g</em></div>
           <div><span>WALA</span><strong>${escapeHtml(match.wala_owner)}</strong><em>${match.wala_weight}g</em></div>
         </div>
-        <div class="live-meta">Difference ${match.weight_difference}g / ${match.status}</div>
+        <div class="live-meta">Difference ${match.weight_difference}g / ${match.status}${resultLabel}</div>
       </article>
     `;
   }

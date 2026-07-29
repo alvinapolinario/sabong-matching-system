@@ -121,15 +121,15 @@ Phased roadmap for the Sabong Matching System. Each phase has a clear goal, scop
 
 | # | Task | Status |
 |---|------|--------|
-| 5.1 | Emit Socket events on fight reorder | `[ ]` |
-| 5.2 | Emit Socket events on fight result / active-TV changes | `[ ]` |
-| 5.3 | Matching board listens and refreshes on all match/fight events | `[ ]` |
-| 5.4 | Live board + fights page subscribe to same event channels | `[ ]` |
-| 5.5 | Smoke-test two-browser sync (matching + fights + live) | `[ ]` |
+| 5.1 | Emit Socket events on fight reorder | `[x]` |
+| 5.2 | Emit Socket events on fight result / active-TV changes | `[x]` |
+| 5.3 | Matching board listens and refreshes on all match/fight events | `[x]` |
+| 5.4 | Live board + fights page subscribe to same event channels | `[x]` |
+| 5.5 | Smoke-test two-browser sync (matching + fights + live) | `[x]` |
 
 **Exit criteria**
-- [ ] Changes on fights page appear on matching/live boards without manual refresh
-- [ ] Documented Socket event contract in README or code
+- [x] Changes on fights page appear on matching/live boards without manual refresh
+- [x] Documented Socket event contract in README or code
 
 **Estimated effort:** 1–2 sessions
 
@@ -194,8 +194,8 @@ Phased roadmap for the Sabong Matching System. Each phase has a clear goal, scop
 
 ## Current phase
 
-> **Phase 5 — Real-time & Multi-operator**  
-> Next task: **5.1** Emit Socket events on fight reorder
+> **Phase 6 — Operations & Deployment**  
+> Next task: **6.1** `GET /health` endpoint
 
 ---
 
@@ -213,6 +213,7 @@ Record choices made during implementation so later phases stay consistent.
 
 | Date | Phase | Notes |
 |------|-------|-------|
+| 2026-07-29 | Phase 5 | Real-time sync across matching, fights, live, and TV |
 | 2026-07-29 | Phase 4 | Login rate limit, override audit log, trust proxy + secure cookies |
 | 2026-07-29 | Phase 3 | Matching board UX: no-fight warnings, modals, auto-match preview |
 | 2026-07-29 | Phase 2 | Matching service extraction, unit tests, partial auto-match |
