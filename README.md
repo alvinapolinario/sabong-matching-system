@@ -165,6 +165,7 @@ backups/            SQL backup storage (gitignored)
 | Path | Auth | Description |
 |------|------|-------------|
 | `/login` | Public | PIN login |
+| `/health` | Public | Health check (DB ping) |
 | `/tv/meron`, `/tv/wala` | Public | TV display views |
 | `/` | Required | Dashboard |
 | `/events` | Required | Event management |
@@ -211,6 +212,108 @@ Pages that auto-refresh: Matching Board, Fights, Live Board, TV displays.
 3. Reorder fights on Fights — other tabs should refresh.
 4. Record a fight result — Live and Matching reflect the update.
 5. Set an active TV fight — `/tv/meron` and `/tv/wala` reload when scoped to that event.
+
+## Production
+
+### Health check
+
+Public endpoint for uptime monitors and load balancers:
+
+```bash
+curl -f http://localhost:3000/health
+```
+
+Returns `200` with `{ "ok": true, "status": "healthy", "database": "connected" }` when MySQL is reachable, or `503` when not.
+
+### Process manager (PM2)
+
+```bash
+npm ci --omit=dev
+cp .env.example .env   # edit for production
+NODE_ENV=production pm2 start app.js --name sabong-matching
+pm2 save
+pm2 startup
+```
+
+### systemd (alternative)
+
+```ini
+[Unit]
+Description=Sabong Matching System
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/sabong-matching-system
+Environment=NODE_ENV=production
+EnvironmentFile=/opt/sabong-matching-system/.env
+ExecStart=/usr/bin/node app.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### Reverse proxy (nginx)
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name matching.example.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
+
+Set in `.env`:
+
+```env
+COOKIE_SECURE=true
+TRUST_PROXY=true
+```
+
+### MySQL backup schedule
+
+The app creates SQL backups automatically before reset/restore via `/reset`. For scheduled off-site backups, run `mysqldump` on the host:
+
+```bash
+# /etc/cron.daily/sabong-mysql-backup
+mysqldump -h localhost -u root -p"$DB_PASSWORD" \
+  --single-transaction --routines --triggers matching_db \
+  > /var/backups/sabong/matching_db_$(date +%F).sql
+```
+
+In Docker, backups written by the app land in `./backups` on the host (mounted volume). Copy that directory to external storage after each event.
+
+### Backup and recovery
+
+| Scenario | Action |
+|----------|--------|
+| **Before reset** | App auto-creates `matching_db_before-reset_*.sql` in `backups/` |
+| **Before restore** | App auto-creates `matching_db_before-restore_*.sql` |
+| **Manual backup** | Use `/reset` page or run `mysqldump` (see above) |
+| **Restore from UI** | `/reset` → Restore Backup → select file → type `RESET` |
+| **Restore from CLI** | `mysql -u root -p matching_db < backups/your-file.sql` |
+
+**Recovery procedure**
+
+1. Stop the app (avoid writes during restore): `pm2 stop sabong-matching` or `docker compose stop app`
+2. Confirm the backup file exists in `backups/`
+3. Restore via `/reset` (creates a safety backup first) or CLI `mysql ... < backup.sql`
+4. Restart the app and verify: `curl -f http://localhost:3000/health`
+5. Log in and spot-check Events, Matching, and Fights for the active event
+
+**Note:** Restore replaces the entire database contents. Override audit logs (`override_logs`) are included in full dumps and cleared on full reset.
 
 ## License
 

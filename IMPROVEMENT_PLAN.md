@@ -143,15 +143,15 @@ Phased roadmap for the Sabong Matching System. Each phase has a clear goal, scop
 
 | # | Task | Status |
 |---|------|--------|
-| 6.1 | `GET /health` endpoint (DB ping) | `[ ]` |
-| 6.2 | GitHub Actions: install + test on push/PR | `[ ]` |
-| 6.3 | Deployment notes (PM2/systemd, reverse proxy, MySQL backup schedule) | `[ ]` |
-| 6.4 | Review backup/restore flow; document recovery procedure | `[ ]` |
+| 6.1 | `GET /health` endpoint (DB ping) | `[x]` |
+| 6.2 | GitHub Actions: install + test on push/PR | `[x]` |
+| 6.3 | Deployment notes (PM2/systemd, reverse proxy, MySQL backup schedule) | `[x]` |
+| 6.4 | Review backup/restore flow; document recovery procedure | `[x]` |
 
 **Exit criteria**
-- [ ] CI runs tests on every push
-- [ ] Health check usable by uptime monitor
-- [ ] README has a “Production” section
+- [x] CI runs tests on every push
+- [x] Health check usable by uptime monitor
+- [x] README has a “Production” section
 
 **Estimated effort:** 1 session
 
@@ -194,8 +194,8 @@ Phased roadmap for the Sabong Matching System. Each phase has a clear goal, scop
 
 ## Current phase
 
-> **Phase 6 — Operations & Deployment**  
-> Next task: **6.1** `GET /health` endpoint
+> **Phase 7 — Performance & Polish (optional)**  
+> Next task: **7.1** Bucket auto-match candidates (only if needed)
 
 ---
 
@@ -213,6 +213,7 @@ Record choices made during implementation so later phases stay consistent.
 
 | Date | Phase | Notes |
 |------|-------|-------|
+| 2026-07-29 | Phase 6 | Health check, GitHub Actions CI, production deployment docs |
 | 2026-07-29 | Phase 5 | Real-time sync across matching, fights, live, and TV |
 | 2026-07-29 | Phase 4 | Login rate limit, override audit log, trust proxy + secure cookies |
 | 2026-07-29 | Phase 3 | Matching board UX: no-fight warnings, modals, auto-match preview |

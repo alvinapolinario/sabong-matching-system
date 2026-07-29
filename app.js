@@ -39,6 +39,8 @@ app.use(session({
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use('/health', require('./routes/health'));
+
 app.use((req, res, next) => {
   req.io = io;
   res.locals.path = req.path;
