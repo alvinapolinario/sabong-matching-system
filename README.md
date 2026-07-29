@@ -22,10 +22,52 @@ Web app for managing cockpit derby events: encoding gamecock entries, drag-and-d
 
 ## Requirements
 
-- Node.js 18+
-- MySQL 8+
+- **Docker (recommended):** Docker Engine + Docker Compose v2
+- **Manual setup:** Node.js 18+ and MySQL 8+
 
-## Setup
+## Quick start (Docker)
+
+### 1. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` if needed. Defaults work for local Docker.
+
+### 2. Start the stack
+
+```bash
+docker compose up --build -d
+```
+
+This starts:
+- **app** — Express app on [http://localhost:3000](http://localhost:3000)
+- **db** — MySQL 8 with schema from `sql/schema.sql` on first run
+
+### 3. Log in
+
+Open [http://localhost:3000](http://localhost:3000) and use the 6-digit PIN from `.env` (default `112233`).
+
+### Useful commands
+
+```bash
+docker compose logs -f app    # App logs
+docker compose down         # Stop containers
+docker compose down -v      # Stop and remove database volume (fresh DB)
+docker compose up --build     # Rebuild and run in foreground
+```
+
+Backups created in the app are stored in `./backups` on the host.
+
+To expose MySQL on the host for debugging, add under the `db` service in `docker-compose.yml`:
+
+```yaml
+ports:
+  - "3307:3306"
+```
+
+## Manual setup (without Docker)
 
 ### 1. Install dependencies
 
@@ -43,7 +85,7 @@ For an existing database, apply numbered migrations in `sql/` in order (`001` th
 
 ### 3. Configure environment
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root (see `.env.example`):
 
 ```env
 PORT=3000
@@ -51,9 +93,12 @@ SESSION_SECRET=change-me-to-a-random-string
 LOGIN_PIN=112233
 MANUAL_MIXED_TYPE_PASSCODE=112233
 MANUAL_WEIGHT_OVERRIDE_PASSCODE=112233
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=matching_db
 ```
-
-Update `db.js` with your MySQL host, user, password, and database name.
 
 ### 4. Run the app
 
@@ -78,12 +123,20 @@ Open [http://localhost:3000](http://localhost:3000) and log in with the 6-digit 
 | `LOGIN_PIN` | `112233` | 6-digit login PIN |
 | `MANUAL_MIXED_TYPE_PASSCODE` | `LOGIN_PIN` | Passcode for manual cross-type matches |
 | `MANUAL_WEIGHT_OVERRIDE_PASSCODE` | `LOGIN_PIN` | Passcode for manual matches exceeding weight tolerance |
+| `DB_HOST` | `localhost` | MySQL host (`db` inside Docker Compose) |
+| `DB_PORT` | `3306` | MySQL port |
+| `DB_USER` | `root` | MySQL user |
+| `DB_PASSWORD` | `''` | MySQL password |
+| `DB_NAME` | `matching_db` | MySQL database name |
 
 ## Project Structure
 
 ```
 app.js              Entry point, middleware, routes
 db.js               MySQL connection pool
+docker/             Container entrypoint scripts
+Dockerfile          App container image
+docker-compose.yml  App + MySQL stack
 controllers/        Request handlers
 models/             Database queries
 routes/             HTTP route definitions
