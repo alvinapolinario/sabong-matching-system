@@ -48,7 +48,49 @@
       body: new URLSearchParams(new FormData(form))
     });
 
-    if (!response.ok) throw new Error('Request failed.');
+    let payload = null;
+    try { payload = await response.json(); } catch (error) { payload = null; }
+    if (!response.ok) throw new Error(payload?.message || 'Request failed.');
+    return payload;
+  }
+
+  // Call / Recall / Re-send / duration: show what the betting station answered, then refresh.
+  document.addEventListener('submit', async (event) => {
+    const form = event.target.closest('form.bridge-form');
+    if (!form) return;
+    event.preventDefault();
+    if (form.dataset.confirm && !window.confirm(form.dataset.confirm)) return;
+    const button = form.querySelector('button');
+    if (button) button.disabled = true;
+    try {
+      const payload = await submitForm(form);
+      showAlert('success', payload?.message || 'Done.');
+      setTimeout(() => window.location.reload(), 1200);
+    } catch (error) {
+      showAlert('danger', error.message);
+      if (button) button.disabled = false;
+    }
+  });
+
+  const bridgeLink = document.getElementById('bridgeLink');
+  async function pollBridge() {
+    try {
+      const s = await (await fetch(bridgeLink.dataset.url, { headers: { Accept: 'application/json' } })).json();
+      bridgeLink.classList.remove('is-ok', 'is-wait');
+      if (s.pending > 0) {
+        bridgeLink.classList.add('is-wait');
+        bridgeLink.textContent = `Betting link: ${s.pending} update(s) waiting${s.last_error ? ' (' + String(s.last_error).slice(0, 80) + ')' : ''}`;
+      } else {
+        bridgeLink.classList.add('is-ok');
+        bridgeLink.textContent = 'Betting link: OK';
+      }
+    } catch (error) {
+      bridgeLink.textContent = 'Betting link: status unavailable';
+    }
+  }
+  if (bridgeLink) {
+    pollBridge();
+    setInterval(pollBridge, 5000);
   }
 
   function rows(body) {
@@ -191,7 +233,8 @@
         }
         showAlert('success', 'TV display updated.');
       } catch (error) {
-        showAlert('danger', 'Unable to update TV display.');
+        showAlert('danger', error.message || 'Unable to update TV display.');
+        setTimeout(() => window.location.reload(), 1500);
       } finally {
         input.disabled = false;
       }

@@ -88,6 +88,18 @@ CREATE TABLE IF NOT EXISTS matches (
   wala_score DECIMAL(3,1) NULL,
   active_tv TINYINT(1) NOT NULL DEFAULT 0,
   tv_meron_chicken_id INT NULL,
+  bet_state ENUM('none','called','open','closed','held','finished','cancelled') NOT NULL DEFAULT 'none',
+  called_at DATETIME NULL,
+  call_version INT NOT NULL DEFAULT 0,
+  called_meron_chicken_id INT NULL,
+  bet_hold_reason VARCHAR(255) NULL,
+  bet_meron_odds DECIMAL(8,2) NULL,
+  bet_wala_odds DECIMAL(8,2) NULL,
+  result_version INT NOT NULL DEFAULT 0,
+  result_source ENUM('manual','betting') NULL,
+  result_corrected_at DATETIME NULL,
+  result_corrected_from VARCHAR(60) NULL,
+  duration_seconds INT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT matches_event_id_fk FOREIGN KEY (event_id) REFERENCES events(event_id)
     ON UPDATE CASCADE ON DELETE CASCADE,
@@ -120,4 +132,32 @@ CREATE TABLE IF NOT EXISTS override_logs (
     ON UPDATE CASCADE ON DELETE CASCADE,
   KEY override_logs_event_id_idx (event_id),
   KEY override_logs_created_at_idx (created_at)
+);
+
+-- Messages to the betting station, kept until it confirms them.
+CREATE TABLE IF NOT EXISTS bridge_outbox (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  msg_key VARCHAR(100) NOT NULL,
+  type VARCHAR(30) NOT NULL,
+  match_id INT NULL,
+  payload LONGTEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  sent_at DATETIME NULL,
+  attempts INT NOT NULL DEFAULT 0,
+  http_status INT NULL,
+  last_error TEXT NULL,
+  UNIQUE KEY bridge_outbox_key_unique (msg_key),
+  KEY bridge_outbox_pending_idx (sent_at, id)
+);
+
+-- Messages from the betting station (same key = same answer, so retries are harmless).
+CREATE TABLE IF NOT EXISTS bridge_inbox (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  msg_key VARCHAR(100) NOT NULL,
+  type VARCHAR(30) NOT NULL,
+  payload LONGTEXT NOT NULL,
+  http_status INT NOT NULL,
+  response TEXT NOT NULL,
+  received_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY bridge_inbox_key_unique (msg_key)
 );

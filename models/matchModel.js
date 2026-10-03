@@ -1,4 +1,5 @@
 const db = require('../db');
+const bridge = require('../services/bettingBridge');
 const { decorateMatchRow, decorateMatchRows } = require('../services/matchDisplayService');
 
 const matchSelect = `
@@ -81,6 +82,14 @@ async function create(data, connection = db) {
 }
 
 async function updateStatus(matchId, status) {
+  if (bridge.enabled()) {
+    await require('../services/fightBridgeService').assertEditable(matchId, 'changed');
+    if (status === 'done') {
+      const error = new Error('A fight becomes done when the betting station declares its result.');
+      error.status = 422;
+      throw error;
+    }
+  }
   const [rows] = await db.execute('SELECT event_id FROM matches WHERE match_id = ?', [matchId]);
   const match = rows[0];
   if (!match) {
@@ -93,6 +102,7 @@ async function updateStatus(matchId, status) {
   return match;
 }
 
+// Link off only; with the link on, "Active" means CALL (services/fightBridgeService.call).
 async function setActiveFight(matchId) {
   const connection = await db.getConnection();
   try {
@@ -128,7 +138,7 @@ async function setActiveFight(matchId) {
 
 async function setTvMeron(matchId, chickenId) {
   const [rows] = await db.execute(
-    `SELECT event_id, meron_chicken_id, wala_chicken_id
+    `SELECT event_id, fight_no, meron_chicken_id, wala_chicken_id, bet_state
      FROM matches
      WHERE match_id = ?`,
     [matchId]
@@ -137,6 +147,12 @@ async function setTvMeron(matchId, chickenId) {
   if (!match) {
     const error = new Error('Match not found.');
     error.status = 404;
+    throw error;
+  }
+
+  if (bridge.enabled() && !['none', 'called', 'held'].includes(match.bet_state)) {
+    const error = new Error(`Fight #${match.fight_no}: betting already opened, the Meron side can no longer change.`);
+    error.status = 422;
     throw error;
   }
 
@@ -162,6 +178,11 @@ function scoresForResult(result) {
 }
 
 async function updateResult(matchId, result) {
+  if (bridge.enabled()) {
+    const error = new Error('Results come from the betting station while the link is on.');
+    error.status = 422;
+    throw error;
+  }
   const normalizedResult = ['meron', 'wala', 'draw'].includes(result) ? result : 'pending';
   const scores = scoresForResult(normalizedResult);
 
@@ -239,7 +260,7 @@ async function scoreSummary(eventId) {
        JOIN entry_data mc ON mc.chicken_id = m.meron_chicken_id
        JOIN entries me ON me.entry_id = mc.entry_id
        JOIN owners mo ON mo.owner_id = me.owner_id
-       WHERE m.event_id = ?
+       WHERE m.event_id = ? AND m.status <> 'cancelled'
        UNION ALL
        SELECT
          wo.owner_id,
@@ -252,7 +273,7 @@ async function scoreSummary(eventId) {
        JOIN entry_data wc ON wc.chicken_id = m.wala_chicken_id
        JOIN entries we ON we.entry_id = wc.entry_id
        JOIN owners wo ON wo.owner_id = we.owner_id
-       WHERE m.event_id = ?
+       WHERE m.event_id = ? AND m.status <> 'cancelled'
      ) scored
      GROUP BY scored.owner_id, scored.owner_name, scored.entry_id, scored.entry_name
      ORDER BY total_score DESC, scored.owner_name ASC, scored.entry_name ASC`,
@@ -292,7 +313,7 @@ async function entryScoreCard(eventId, entryId) {
        JOIN entry_data mc ON mc.chicken_id = m.meron_chicken_id
        JOIN entries me ON me.entry_id = mc.entry_id
        JOIN owners mo ON mo.owner_id = me.owner_id
-       WHERE m.event_id = ? AND me.entry_id = ?
+       WHERE m.event_id = ? AND me.entry_id = ? AND m.status <> 'cancelled'
        UNION ALL
        SELECT
          wo.owner_name,
@@ -303,7 +324,7 @@ async function entryScoreCard(eventId, entryId) {
        JOIN entry_data wc ON wc.chicken_id = m.wala_chicken_id
        JOIN entries we ON we.entry_id = wc.entry_id
        JOIN owners wo ON wo.owner_id = we.owner_id
-       WHERE m.event_id = ? AND we.entry_id = ?
+       WHERE m.event_id = ? AND we.entry_id = ? AND m.status <> 'cancelled'
      ) scored
      GROUP BY scored.owner_name, scored.entry_name`,
     [eventId, entryId, eventId, entryId]
@@ -357,6 +378,8 @@ async function activeTvCard(side, eventId) {
 }
 
 async function renumberEvent(eventId, connection) {
+  // Once fights are called or played, numbers are shared with the betting station: leave gaps instead.
+  if (await require('../services/fightBridgeService').hasLockedNumbers(eventId, connection)) return;
   const [rows] = await connection.execute(
     'SELECT match_id, fight_no FROM matches WHERE event_id = ? ORDER BY fight_no ASC FOR UPDATE',
     [eventId]
@@ -399,6 +422,11 @@ async function deleteAndRelease(matchId) {
       error.status = 422;
       throw error;
     }
+    if (match.bet_state && match.bet_state !== 'none') {
+      const error = new Error(`Fight #${match.fight_no} is ${match.bet_state} on the betting station. Recall it first (before betting opens).`);
+      error.status = 422;
+      throw error;
+    }
 
     await connection.execute('DELETE FROM matches WHERE match_id = ?', [matchId]);
     await connection.execute(
@@ -430,6 +458,7 @@ async function deleteUnfoughtAndRelease(eventId) {
        WHERE event_id = ?
          AND status IN ('pending', 'confirmed')
          AND result = 'pending'
+         AND bet_state = 'none'
        FOR UPDATE`,
       [eventId]
     );
@@ -485,6 +514,20 @@ async function reorder(eventId, orderedMatchIds) {
       const error = new Error('Fight order is stale. Reload the page and try again.');
       error.status = 409;
       throw error;
+    }
+
+    // Fights already called or played keep their numbers (shared with the betting station).
+    if (bridge.enabled()) {
+      const [locked] = await connection.execute(
+        "SELECT match_id, fight_no FROM matches WHERE event_id = ? AND (bet_state <> 'none' OR result <> 'pending' OR status = 'done')",
+        [eventId]
+      );
+      const moved = locked.filter((row) => submittedIds.indexOf(Number(row.match_id)) + 1 !== Number(row.fight_no));
+      if (moved.length) {
+        const error = new Error(`Fights already called or played keep their numbers (#${moved.map((r) => r.fight_no).join(', #')}). Move only fights that are not yet called.`);
+        error.status = 422;
+        throw error;
+      }
     }
 
     const maxFightNo = existingRows.reduce((max, row) => Math.max(max, Number(row.fight_no)), 0);

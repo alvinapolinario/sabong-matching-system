@@ -70,6 +70,14 @@ const config = {
     ? requireEnv('MANUAL_WEIGHT_OVERRIDE_PASSCODE')
     : optionalEnv('MANUAL_WEIGHT_OVERRIDE_PASSCODE', loginPin),
   autoMatchEntryGap: optionalPositiveInt('AUTO_MATCH_ENTRY_GAP', 5),
+  // Link with the betting station on the same server (fights called here, results come back).
+  bridge: {
+    enabled: process.env.BETTING_BRIDGE_ENABLED === 'true',
+    bettingUrl: (optionalEnv('BETTING_BRIDGE_URL', '') || '').replace(/\/+$/, ''),
+    keyToBetting: optionalEnv('MATCHING_TO_BETTING_KEY', ''),
+    keyFromBetting: optionalEnv('BETTING_TO_MATCHING_KEY', ''),
+    maxClockSkew: 300
+  },
   db: {
     host: optionalEnv('DB_HOST', 'localhost'),
     port: Number(process.env.DB_PORT || 3306),

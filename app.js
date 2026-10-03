@@ -23,7 +23,8 @@ app.set('views', path.join(__dirname, 'views'));
 app.locals.appName = config.appName;
 
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+// rawBody is kept for checking the signature of messages from the betting station.
+app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf.toString('utf8'); } }));
 app.use(methodOverride('_method'));
 app.use(session({
   name: config.sessionCookieName,
@@ -46,9 +47,11 @@ app.use((req, res, next) => {
   res.locals.path = req.path;
   res.locals.query = req.query;
   res.locals.isAuthenticated = Boolean(req.session?.authenticated);
+  res.locals.bridgeEnabled = require('./services/bettingBridge').enabled();
   next();
 });
 
+app.use('/bridge', require('./routes/bridge'));
 app.use('/', require('./routes/auth'));
 app.use('/tv', require('./routes/tv'));
 app.use(requireAuth);
@@ -83,6 +86,7 @@ app.use((err, req, res, next) => {
 });
 
 socketHandler(io);
+require('./services/bettingBridge').start();
 
 server.listen(config.port, () => {
   console.log(`${config.appName} running on http://0.0.0.0:${config.port}`);

@@ -1,5 +1,7 @@
 const Event = require('../models/eventModel');
 const Match = require('../models/matchModel');
+const bridge = require('../services/bettingBridge');
+const flow = require('../services/fightBridgeService');
 const {
   emitFightsUpdated,
   emitTvUpdated,
@@ -85,8 +87,33 @@ async function updateResult(req, res, next) {
   }
 }
 
+function wantsJson(req) {
+  return req.accepts('json') && !req.accepts('html');
+}
+
+function reply(req, res, status, message, ok = status < 300) {
+  if (wantsJson(req)) return res.status(status).json({ ok, message });
+  res.redirect(req.get('referer') || '/fights');
+}
+
+/** Send a queued call/recall now and tell the operator what the betting station said. */
+async function deliver(req, res, eventId, outboxId, okMessage) {
+  await bridge.flush().catch(() => null);
+  const outcome = await bridge.outcome(outboxId);
+  emitFightsUpdated(req.io, eventId);
+  emitTvUpdated(req.io, eventId);
+  if (outcome.state === 'refused') return reply(req, res, 409, `Betting station refused: ${outcome.message}`, false);
+  if (outcome.state === 'waiting') return reply(req, res, 202, `${okMessage} Waiting for the betting station (will retry automatically): ${outcome.message}`);
+  return reply(req, res, 200, okMessage);
+}
+
+/** CALL the fight (link on) / make it the active TV fight (link off). */
 async function setActive(req, res, next) {
   try {
+    if (bridge.enabled()) {
+      const { match, outboxId } = await flow.call(req.params.id);
+      return deliver(req, res, match.event_id, outboxId, `Fight #${match.fight_no} called and sent to the betting station.`);
+    }
     const match = await Match.setActiveFight(req.params.id);
     emitTvUpdated(req.io, match.event_id);
     emitFightsUpdated(req.io, match.event_id);
@@ -102,6 +129,10 @@ async function setActive(req, res, next) {
 async function setTvMeron(req, res, next) {
   try {
     const match = await Match.setTvMeron(req.params.id, req.body.chicken_id);
+    if (bridge.enabled() && ['called', 'held'].includes(match.bet_state)) {
+      const { outboxId } = await flow.resend(req.params.id);
+      return deliver(req, res, match.event_id, outboxId, `Meron side changed; fight #${match.fight_no} re-sent to the betting station.`);
+    }
     emitTvUpdated(req.io, match.event_id);
     emitFightsUpdated(req.io, match.event_id);
     if (req.accepts('json') && !req.accepts('html')) {
@@ -113,4 +144,53 @@ async function setTvMeron(req, res, next) {
   }
 }
 
-module.exports = { index, apiSchedule, updateStatus, updateResult, setActive, setTvMeron, reorder };
+async function recall(req, res, next) {
+  try {
+    const { match, outboxId } = await flow.recall(req.params.id, (req.body || {}).reason);
+    return deliver(req, res, match.event_id, outboxId, `Fight #${match.fight_no} recalled from the betting station.`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function resend(req, res, next) {
+  try {
+    const { match, outboxId } = await flow.resend(req.params.id);
+    return deliver(req, res, match.event_id, outboxId, `Fight #${match.fight_no} re-sent to the betting station.`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** Optional fight duration, "m:ss" (empty clears it). */
+async function setDuration(req, res, next) {
+  try {
+    const raw = String((req.body || {}).duration || '').trim();
+    let seconds = null;
+    if (raw) {
+      const m = /^(\d{1,2}):([0-5]\d)$/.exec(raw);
+      if (!m) {
+        const error = new Error('Enter the duration as m:ss, e.g. 2:35.');
+        error.status = 422;
+        throw error;
+      }
+      seconds = Number(m[1]) * 60 + Number(m[2]);
+    }
+    const match = await flow.setDuration(req.params.id, seconds);
+    emitFightsUpdated(req.io, match.event_id);
+    emitTvUpdated(req.io, match.event_id);
+    return reply(req, res, 200, `Fight #${match.fight_no} duration saved.`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function bridgeStatus(req, res, next) {
+  try {
+    res.json(await bridge.status());
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { index, apiSchedule, updateStatus, updateResult, setActive, setTvMeron, reorder, recall, resend, setDuration, bridgeStatus };
