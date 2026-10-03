@@ -51,7 +51,7 @@ async function createForm(req, res, next) {
     const selectedEventId = req.query.event_id || (events.length === 1 ? events[0].event_id : '');
     res.render('entries/form', {
       title: 'New Entry',
-      entry: { event_id: selectedEventId, owner_id: '', entry_name: '' },
+      entry: { event_id: selectedEventId, owner_id: req.query.owner_id || '', entry_name: '' },
       events,
       owners,
       action: '/entries'
@@ -63,9 +63,14 @@ async function createForm(req, res, next) {
 
 async function store(req, res, next) {
   try {
+    const entryName = String(req.body.entry_name || '').trim();
+    if (!entryName || !req.body.owner_id || !req.body.event_id) {
+      const back = req.body.return_to && /^\/entries\/\d+\/encode$/.test(req.body.return_to) ? req.body.return_to : '/entries/new';
+      return res.redirect(`${back}?error=${encodeURIComponent('Enter the entry name.')}`);
+    }
     const entryId = await Entry.create({
       owner_id: req.body.owner_id,
-      entry_name: req.body.entry_name.trim(),
+      entry_name: entryName,
       event_id: req.body.event_id
     });
     res.redirect(`/entries/${entryId}/encode`);
@@ -81,12 +86,16 @@ async function encodeForm(req, res, next) {
       Entry.chickens(req.params.id)
     ]);
     if (!entry) return res.status(404).render('error', { title: 'Not Found', message: 'Entry not found.' });
-    const nextEntryNo = await Entry.nextEntryNo(req.params.id);
+    const [nextEntryNo, ownerEntries] = await Promise.all([
+      Entry.nextEntryNo(req.params.id),
+      Entry.byOwnerInEvent(entry.owner_id, entry.event_id)
+    ]);
     res.render('entries/encode', {
       title: 'Entry Encoding',
       entry,
       chickens,
       nextEntryNo,
+      ownerEntries,
       error: req.query.error || ''
     });
   } catch (error) {

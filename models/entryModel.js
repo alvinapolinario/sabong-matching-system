@@ -95,4 +95,18 @@ async function addChicken(data) {
   return result.insertId;
 }
 
-module.exports = { all, findById, create, update, chickens, nextEntryNo, addChicken };
+/** Other entries of the same owner in the same event (for quick switching). */
+async function byOwnerInEvent(ownerId, eventId) {
+  const [rows] = await db.execute(
+    `SELECT e.entry_id, e.entry_name, COUNT(ed.chicken_id) AS chicken_count
+     FROM entries e
+     LEFT JOIN entry_data ed ON ed.entry_id = e.entry_id
+     WHERE e.owner_id = ? AND e.event_id = ?
+     GROUP BY e.entry_id
+     ORDER BY e.created_at ASC, e.entry_id ASC`,
+    [ownerId, eventId]
+  );
+  return rows;
+}
+
+module.exports = { all, findById, create, update, chickens, nextEntryNo, addChicken, byOwnerInEvent };

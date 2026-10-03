@@ -21,7 +21,7 @@
       <select required name="owner_id" class="form-select">
         <option value="">Select owner</option>
         <% owners.forEach((owner) => { %>
-          <option value="<%= owner.owner_id %>"><%= owner.owner_name %></option>
+          <option value="<%= owner.owner_id %>" <%= String(entry.owner_id) === String(owner.owner_id) ? 'selected' : '' %>><%= owner.owner_name %></option>
         <% }) %>
       </select>
     </div>
