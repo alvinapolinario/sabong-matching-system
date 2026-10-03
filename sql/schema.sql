@@ -100,6 +100,8 @@ CREATE TABLE IF NOT EXISTS matches (
   result_corrected_at DATETIME NULL,
   result_corrected_from VARCHAR(60) NULL,
   duration_seconds INT NULL,
+  rematch_of INT NULL,
+  rematch_reason VARCHAR(255) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT matches_event_id_fk FOREIGN KEY (event_id) REFERENCES events(event_id)
     ON UPDATE CASCADE ON DELETE CASCADE,

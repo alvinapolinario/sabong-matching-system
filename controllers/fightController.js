@@ -193,4 +193,15 @@ async function bridgeStatus(req, res, next) {
   }
 }
 
-module.exports = { index, apiSchedule, updateStatus, updateResult, setActive, setTvMeron, reorder, recall, resend, setDuration, bridgeStatus };
+async function rematch(req, res, next) {
+  try {
+    const out = await Match.rematch(req.params.id, (req.body || {}).reason);
+    emitFightsUpdated(req.io, out.event_id);
+    emitPoolUpdated(req.io, out.event_id);
+    return reply(req, res, 201, `Fight #${out.original_fight_no} will be fought again as fight #${out.fight_no}. Call it when the cocks are ready.`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { index, apiSchedule, updateStatus, updateResult, setActive, setTvMeron, reorder, recall, resend, setDuration, bridgeStatus, rematch };

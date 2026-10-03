@@ -16,8 +16,11 @@ const matchSelect = `
     wc.wingband AS wala_wingband,
     wc.legband AS wala_legband,
     we.entry_name AS wala_entry,
-    wo.owner_name AS wala_owner
+    wo.owner_name AS wala_owner,
+    orig.fight_no AS rematch_of_fight_no,
+    (SELECT r.fight_no FROM matches r WHERE r.rematch_of = m.match_id ORDER BY r.match_id DESC LIMIT 1) AS rematched_as_fight_no
   FROM matches m
+  LEFT JOIN matches orig ON orig.match_id = m.rematch_of
   JOIN events ev ON ev.event_id = m.event_id
   JOIN entry_data mc ON mc.chicken_id = m.meron_chicken_id
   JOIN entries me ON me.entry_id = mc.entry_id
@@ -565,7 +568,63 @@ async function dashboardStats() {
   return rows[0];
 }
 
+/**
+ * Re-fight a cancelled fight: a NEW fight (next number) with the same cocks on the
+ * same sides. The cancelled fight stays as it is (its bets were refunded); only the
+ * new fight counts for points.
+ */
+async function rematch(matchId, reason) {
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.execute('SELECT * FROM matches WHERE match_id = ? FOR UPDATE', [matchId]);
+    const original = rows[0];
+    const fail = (message, status = 422) => { const e = new Error(message); e.status = status; throw e; };
+    if (!original) fail('Fight not found.', 404);
+    if (original.status !== 'cancelled') fail(`Fight #${original.fight_no} is not cancelled. Only a cancelled fight can be fought again.`);
+    if (!String(reason || '').trim()) fail('Give the reason, e.g. "Injured Meron, rested 2 hours".');
+
+    const [already] = await connection.execute('SELECT fight_no FROM matches WHERE rematch_of = ? LIMIT 1', [matchId]);
+    if (already[0]) fail(`Fight #${original.fight_no} was already fought again as #${already[0].fight_no}.`);
+
+    // Same sides as when it was cancelled: the cock that was Meron stays Meron.
+    const meronId = Number(original.called_meron_chicken_id || original.tv_meron_chicken_id || original.meron_chicken_id);
+    const meronIsOriginal = meronId === Number(original.meron_chicken_id);
+    const walaId = meronIsOriginal ? Number(original.wala_chicken_id) : Number(original.meron_chicken_id);
+    const meronWeight = meronIsOriginal ? original.meron_weight : original.wala_weight;
+    const walaWeight = meronIsOriginal ? original.wala_weight : original.meron_weight;
+
+    // Both cocks must still be free (not matched into another fight meanwhile).
+    const [busy] = await connection.execute(
+      `SELECT fight_no FROM matches
+       WHERE match_id <> ? AND status <> 'cancelled'
+         AND (meron_chicken_id IN (?, ?) OR wala_chicken_id IN (?, ?))
+       LIMIT 1 FOR UPDATE`,
+      [matchId, meronId, walaId, meronId, walaId]
+    );
+    if (busy[0]) fail(`One of the cocks is already in fight #${busy[0].fight_no}. Remove that match first.`);
+
+    const fightNo = await nextFightNo(original.event_id, connection);
+    const [result] = await connection.execute(
+      `INSERT INTO matches (event_id, fight_no, meron_chicken_id, wala_chicken_id, meron_weight, wala_weight,
+                            weight_difference, status, rematch_of, rematch_reason)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?)`,
+      [original.event_id, fightNo, meronId, walaId, meronWeight, walaWeight, original.weight_difference,
+        matchId, String(reason).trim().slice(0, 255)]
+    );
+    await connection.execute("UPDATE entry_data SET status = 'matched' WHERE chicken_id IN (?, ?)", [meronId, walaId]);
+    await connection.commit();
+    return { event_id: original.event_id, original_fight_no: original.fight_no, fight_no: fightNo, match_id: result.insertId };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 module.exports = {
+  rematch,
   all,
   findById,
   nextFightNo,

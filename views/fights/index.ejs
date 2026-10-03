@@ -115,7 +115,22 @@
               <% const betClass = { called: 'text-bg-info', open: 'text-bg-success', closed: 'text-bg-warning', held: 'text-bg-danger', finished: 'text-bg-dark', cancelled: 'text-bg-secondary' }; %>
               <% matches.forEach((match) => { %>
                 <tr data-match-id="<%= match.match_id %>" data-marker-suffix="<%= match.marker_suffix %>">
-                  <td class="fw-semibold fight-status-no"><span class="drag-handle">☰</span> #<%= match.fight_no %><% if (match.marker_suffix) { %><span class="match-marker"><%= match.marker_suffix %></span><% } %></td>
+                  <td class="fw-semibold">
+                    <span class="fight-status-no"><span class="drag-handle">☰</span> #<%= match.fight_no %><% if (match.marker_suffix) { %><span class="match-marker"><%= match.marker_suffix %></span><% } %></span>
+                    <% if (match.rematch_of_fight_no) { %><div><span class="badge text-bg-primary" title="<%= match.rematch_reason %>">Ulit ng #<%= match.rematch_of_fight_no %></span></div><% } %>
+                    <% if (match.status === 'cancelled') { %>
+                      <div class="mt-1">
+                        <% if (match.rematched_as_fight_no) { %>
+                          <span class="badge text-bg-light border">Inulit sa #<%= match.rematched_as_fight_no %></span>
+                        <% } else { %>
+                          <form method="post" action="/fights/<%= match.match_id %>/rematch?_method=PUT" class="bridge-form d-flex flex-column gap-1" data-confirm="Gumawa ng bagong laban (parehong manok at panig) para sa cancelled na #<%= match.fight_no %>?">
+                            <input name="reason" class="form-control form-control-sm" style="min-width:11rem" placeholder="Dahilan, hal. pilay, pahinga 2 oras" required maxlength="255">
+                            <button class="btn btn-sm btn-outline-primary">Ulitin ang laban</button>
+                          </form>
+                        <% } %>
+                      </div>
+                    <% } %>
+                  </td>
                   <td class="fight-side-cell">
                     <div class="side-owner"><%= match.meron_owner %></div>
                     <div class="side-entry"><%= match.meron_entry %> / <%= match.meron_weight %>g</div>

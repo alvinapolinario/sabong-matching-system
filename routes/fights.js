@@ -11,6 +11,7 @@ router.put('/:id/status', controller.updateStatus);
 router.put('/:id/recall', controller.recall);
 router.put('/:id/resend', controller.resend);
 router.put('/:id/duration', controller.setDuration);
+router.put('/:id/rematch', controller.rematch);
 router.get('/api/bridge-status', controller.bridgeStatus);
 
 module.exports = router;
